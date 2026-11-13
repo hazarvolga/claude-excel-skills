@@ -131,6 +131,12 @@ docs/            README görselleri
   dosya ve klasör için bir kez izin ister.
 - Doğrulama Excel for Mac 16 (Türkçe arayüz) ile yapıldı. Windows Excel'de görünüm küçük farklar gösterebilir.
 
+## Sürüm notları
+
+- **1.0.1:** `xk.dolgu()` artık `bgColor` da yazar. Önceden koşullu biçim kurallarında (`FormulaRule(fill=xk.dolgu(...))`)
+  kullanılan dolgu Excel'de görünmüyor, yalnız LibreOffice'te görünüyordu. Hücre dolguları değişmedi.
+- **1.0.0:** İlk sürüm.
+
 ## Lisans
 
 [MIT](LICENSE)

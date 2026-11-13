@@ -14,6 +14,7 @@
 ## Hücre stili
 | Fonksiyon | Ne yapar |
 |---|---|
+| `dolgu(renk)` | Düz dolgu; hücrede ve koşullu biçimde (`FormulaRule(fill=...)`) çalışır |
 | `zemin(ws, t, alan)` | Izgarayı kapatır, alanı kâğıt rengine boyar |
 | `sayfa_basligi(ws, t, metin, alt, hucre, genislik)` | Başlık + alt satır + vurgu çizgisi |
 | `bant(ws, t, alan, metin, koyu=True)` | Birleşik bölüm başlığı |

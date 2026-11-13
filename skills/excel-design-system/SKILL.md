@@ -2,7 +2,7 @@
 name: excel-design-system
 description: "Use when an Excel workbook (.xlsx) must look professional: applying a theme or brand colors, typography, table and header styling, KPI cards, conditional formatting, Turkish number/date/currency formats, print layout, or when the user says excel tasarımı, profesyonel excel, şık tablo, kurumsal rapor, excel teması, renk paleti, biçimlendirme. Base layer for excel-charts and excel-dashboard; holds the shared xlkit.py helper library."
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
   scope: global
 ---
 
@@ -58,6 +58,7 @@ Renk, yazı ve boşluk tokenlarının tamamı: [references/tema-tokenlari.md](re
 | openpyxl hesaplanmış değer yazmaz | Quick Look, telefon, bazı okuyucular boş görür | Son adım `xk.excel_ile_kaydet()` |
 | Grafik veri etiketi biçimi | `5200000,00,, M`, `+04%` (hücrede doğru) | Etiket kaynağında yalnız `0 % + -` ve "metin"; bkz. `excel-charts` |
 | Uzun tire `—` | Klişe, bazı fontlarda kutu | Orta nokta `·` veya iki nokta |
+| Koşullu biçimde dolgu | Excel'de görünmez, LibreOffice'te görünür (ör. Gantt çubukları, satır şeritleri) | `fill=xk.dolgu(renk)` (v1.0.1'den beri `fgColor` ve `bgColor` birlikte); elle yazıyorsanız `PatternFill("solid", bgColor=renk)` |
 
 Biçim kodları (`xk.BICIM`): `sayi`, `sayi1`, `sayi2`, `yuzde`, `yuzde1`, `tl`, `tl2`, `bin`, `milyon`,
 `tarih`, `ay`, `ay_kisa`, `ay_uzun`, `delta`, `delta_ok`; grafik etiketi için `etiket_bin`, `etiket_milyon`,

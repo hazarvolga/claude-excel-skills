@@ -132,7 +132,10 @@ def yazi(t: Tema, boyut=10, kalin=False, renk=None, baslik=False, italik=False) 
 
 
 def dolgu(renk: str) -> PatternFill:
-    return PatternFill("solid", fgColor=renk)
+    """Düz dolgu. Hücrede de koşullu biçimde de çalışır: hücre dolgusu rengi fgColor'dan, koşullu biçim (dxf)
+    dolgusu rengi bgColor'dan okunur. Yalnız fgColor yazılırsa koşullu biçim dolgusu Excel'de görünmez
+    (LibreOffice'te görünür), bu yüzden ikisi de yazılır."""
+    return PatternFill("solid", fgColor=renk, bgColor=renk)
 
 
 def zemin(ws, t: Tema, alan: str = "A1:Z80"):
