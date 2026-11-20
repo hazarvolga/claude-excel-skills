@@ -12,6 +12,9 @@ from conftest import DEPO, SKILLS
 YASAK = ("~/.claude", "~/.Codex", "~/.codex", ".agents/skills")
 
 
+README_YASAK = ("~/.claude/skills/excel", "~/.Codex", "cp -R")  # README araç klasörü tablosunu gösterebilir
+
+
 def _taranacaklar():
     yield from (p for p in SKILLS.rglob("*") if p.suffix in (".md", ".py") and "__pycache__" not in p.parts)
 
@@ -19,6 +22,8 @@ def _taranacaklar():
 def test_sabit_arac_yolu_yok():
     bulunan = [f"{p.relative_to(DEPO)}: {y}" for p in _taranacaklar()
                for y in YASAK if y in p.read_text(encoding="utf-8")]
+    readme = (DEPO / "README.md").read_text(encoding="utf-8")
+    bulunan += [f"README.md: {y}" for y in README_YASAK if y in readme]
     assert bulunan == []
 
 
