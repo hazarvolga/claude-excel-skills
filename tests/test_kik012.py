@@ -131,3 +131,12 @@ def test_kurus_yuvarlama_tebligdeki_ornekler(toplam_ham, beklenen):
     import kik012_denetim
     from decimal import Decimal
     assert kik012_denetim.yuvarla_kurus(Decimal(str(toplam_ham))) == Decimal(str(beklenen))
+
+
+def test_dipnot_isaretli_baslik_kabul(tmp_path):
+    yol, idare = _cetvel(tmp_path)
+    from openpyxl import load_workbook
+    wb = load_workbook(yol)
+    wb["Cetvel"]["A1"] = "BİRİM FİYAT TEKLİF CETVELİ (1)"
+    wb.save(yol)
+    assert _denetle(yol, idare) == []

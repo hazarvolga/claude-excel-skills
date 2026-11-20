@@ -82,6 +82,10 @@ değerini aynı hane sayısıyla girer.
   4. "Bu sütuna sadece yapım işleri ihalelerinde yer verilecektir."
   5. "Hesaplama yapılırken her bir iş kaleminin miktar sütunundaki rakam ile teklif edilen birim fiyat çarpılarak o iş
      kalemine ait teklif tutarı bulunacaktır."
+- Dipnot işaretleri formdaki yerlerinde, metnin sonunda parantezle: başlık "BİRİM FİYAT TEKLİF CETVELİ (1)", grup
+  başlıkları "A (2)" ve "B (3)", sütun başlıkları "İş Kalemi No (4)" ve "Tutarı (5)". Dipnot metinleri tablonun altında
+  aynı numaralarla.
+- Cetvelin üstüne iş adı, idare, istekli satırı eklemek formda yoktur; idarenin dokümanı istemedikçe ekleme.
 - Alt bilgi: "KİK012 Birim Fiyat Teklif Cetveli (Mal/Yapım/Danışmanlık)".
 - Güncel formda imza alanı yoktur (imza mektupta, e-imzayla). Fiziki teklifte idare doküman ayrıca imza isterse
   kullanıcının söylediğini ekle.

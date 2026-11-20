@@ -70,7 +70,7 @@ def _sayfa_bul(wb, ad: str | None):
     if ad:
         return wb[ad]
     for ws in wb:
-        if any(_metin(c.value) == BASLIK for r in ws.iter_rows(max_row=10) for c in r):
+        if any(_metin(c.value).startswith(BASLIK) for r in ws.iter_rows(max_row=10) for c in r):
             return ws
     return wb.worksheets[0]
 
@@ -100,7 +100,7 @@ def _veri_satirlari(ws, bas: int):
 
 
 def _kontrol_yapisi(ws, metinler, hatalar):
-    if BASLIK not in metinler:
+    if not any(m.startswith(BASLIK) for m in metinler):  # "(1)" dipnot işareti bitişik olabilir
         hatalar.append(f"başlık '{BASLIK}' yok")
     if not any(m.startswith(IKN) for m in metinler):
         hatalar.append(f"'{IKN}:' satırı yok")
