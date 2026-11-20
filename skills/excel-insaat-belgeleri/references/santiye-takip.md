@@ -24,8 +24,12 @@ Tablolar `xk.tablo_basligi` ile başlıklı, gövde satırları girdi hücresi; 
 
 ## Aylık puantaj
 
-Bir ay = bir sayfa (A4 yatay, genişliğe sığdır). Parametre hücreleri: **Yıl** ve **Ay** (girdi), tanımlı adlar
-`PUANTAJ_YIL`, `PUANTAJ_AY`.
+Bir ay = bir sayfa (A4 yatay, genişliğe sığdır). Parametre hücreleri: **Yıl**, **Ay** ve **Yarım gün değeri**
+(girdi, başlangıç 0,5), tanımlı adlar `PUANTAJ_YIL`, `PUANTAJ_AY`, `YARIM_GUN`. Birleşik iki satırlı başlık nedeniyle
+puantaj Excel Tablosu değildir; düz aralıktır.
+
+Satır düzeni (örnek): **5** gizli sabit gün satırı (F5:AJ5 = 1…31), **6** gün numarası, **7** haftanın günü,
+**8'den itibaren** çalışan satırları (15-20 satır), en altta toplam satırı ve kod açıklaması.
 
 | Sütun | İçerik |
 |---|---|
@@ -33,17 +37,17 @@ Bir ay = bir sayfa (A4 yatay, genişliğe sığdır). Parametre hücreleri: **Y�
 | F … AJ · 1-31 | gün hücreleri, kod girilir |
 | AK … | özet sütunları (aşağıda) |
 
-- Gün başlığı (iki satır): üstte gün numarası, altta haftanın günü. Gün numarası
-  `=IF(MONTH(DATE(PUANTAJ_YIL,PUANTAJ_AY,F$5))=PUANTAJ_AY,F$5,"")` (F5'te 1…31 sabit sayı, gizli satır ya da açık
-  küçük yazı). Ayın dışında kalan günler (29-31) boş görünür.
-- Haftanın günü: `=IF(F6="","",CHOOSE(WEEKDAY(DATE(PUANTAJ_YIL,PUANTAJ_AY,F$5),2),"Pt","Sa","Ça","Pe","Cu","Ct","Pz"))`.
+- Gün numarası (satır 6): `=IF(MONTH(DATE(PUANTAJ_YIL,PUANTAJ_AY,F$5))=PUANTAJ_AY,F$5,"")`. Ayın dışında kalan
+  günler (29-31) boş görünür.
+- Haftanın günü (satır 7): `=IF(F$6="","",CHOOSE(WEEKDAY(DATE(PUANTAJ_YIL,PUANTAJ_AY,F$5),2),"Pt","Sa","Ça","Pe","Cu","Ct","Pz"))`.
   `TEXT(…,"ddd")` kullanma (dil Excel arayüzüne göre değişir).
-- Hafta sonu sütunu: koşullu biçim `=AND(F$6<>"",WEEKDAY(DATE(PUANTAJ_YIL,PUANTAJ_AY,F$5),2)>5)` ile `t.yuzey` zemin.
-  Ay dışı sütun: `=F$6=""` ile koyu gri zemin. Koşullu dolguda `xk.dolgu()` kullan (Excel'de görünmesi için).
+- Hafta sonu sütunu: koşullu biçim `=AND(F$6<>"",WEEKDAY(DATE(PUANTAJ_YIL,PUANTAJ_AY,F$5),2)>5)`; zemin kâğıttan
+  belirgin ayrışan bir ton olmalı (açık temalarda `t.cizgi`; `t.yuzey` kâğıda çok yakın, görünmez). Ay dışı sütun:
+  `=F$6=""` ile koyu gri zemin. Koşullu dolguda `xk.dolgu()` kullan (Excel'de görünmesi için).
 - **Kodlar** sayfanın altında açıklanır ve gün hücrelerine açılır liste olarak verilir: `X` tam gün, `Y` yarım gün,
   `İ` izinli, `R` raporlu, `M` mazeretsiz yok, boş = çalışmadı / kayıt yok. Kullanıcı başka kod isterse onları kullan.
-- Özet sütunları: Tam gün `=COUNTIF(F7:AJ7,"X")`, Yarım `=COUNTIF(F7:AJ7,"Y")`, İzinli, Raporlu, Mazeretsiz,
-  **Çalışılan gün** `=AK7+AL7*0.5` (yarım günün değeri kullanıcıdan farklı gelirse onu tanımlı ad yap: `YARIM_GUN`).
+- Özet sütunları (satır 8 için): Tam gün `=COUNTIF(F8:AJ8,"X")`, Yarım `=COUNTIF(F8:AJ8,"Y")`, İzinli, Raporlu,
+  Mazeretsiz, **Çalışılan gün** `=AK8+AL8*YARIM_GUN`. Toplam satırında her özet sütunu `SUM`.
 - Ücret hesabı istenirse günlük ücret girdi sütunu ve `=Çalışılan gün × Günlük ücret`; vergi ve kesinti hesaplama.
 
 ## Malzeme takip

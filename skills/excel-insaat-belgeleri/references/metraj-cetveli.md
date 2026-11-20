@@ -28,7 +28,11 @@ Metraj cetveli bir pozun miktarını ölçü satırlarından hesaplar ve keşif 
 | J · Miktar | `=IF(E9="-",-1,1)*PRODUCT(F9:I9)` | formül |
 | K · Birim | Poz bloğunun ilk satırında (m, m², m³, adet) | girdi |
 
-- `PRODUCT` boş hücreleri yok sayar: alan ölçüsünde Yükseklik boş bırakılır, uzunlukta yalnız Boy dolu olur. Boş
+- Hangi ölçünün hangi sütuna gireceği işin yönüne bağlıdır: yatay alan (döşeme, şap) En × Boy, düşey alan (duvar,
+  sıva) En (uzunluk) × Yükseklik, Boy boş. Kullanıcının verdiği yerleşimi koru; denetim sütun adına değil dolu ölçü
+  sayısına bakar.
+- `PRODUCT` boş hücreleri yok sayar: alan ölçüsünde üçüncü ölçü boş bırakılır, uzunlukta yalnız bir ölçü dolu olur;
+  Adet verilmediyse boş kalır (1 sayılır). Boş
   ölçüyü **0 yazma** (0 yazılırsa miktar 0 olur); ölçü yoksa hücre boş kalır.
 - Hepsi boş satır `PRODUCT` ile 0 verir; ekstra koruma gerekmez.
 - Minha satırının açıklaması neyin düşüldüğünü söyler ("Minha: pencere 1,20 × 1,50").
@@ -53,7 +57,8 @@ Metraj cetveli bir pozun miktarını ölçü satırlarından hesaplar ve keşif 
 ## Keşif cetveline bağlama
 
 Keşif cetvelindeki Miktar hücresi metrajdaki poz toplamına başvurur: `='Metraj'!J11`. Böylece miktar tek yerde
-girilir. Metrajı olmayan kalemde keşif miktarı girdi hücresi kalır. Bağlı miktar hücresini girdi rengiyle
+girilir. Bağlı miktar hücresinin biçimi metrajdakiyle aynıdır (`"#,##0.000"`); iki ondalık gösterilirse görünen
+miktar ile tutar uyuşmuyor gibi durur. Metrajı olmayan kalemde keşif miktarı girdi hücresi kalır. Bağlı miktar hücresini girdi rengiyle
 boyama; `t.yuzey` zemin ver ki kullanıcı onun formül olduğunu görsün.
 
 İsteğe bağlı **Metraj icmali** sayfası: Poz No · Tanım · Birim · Toplam miktar (`='Metraj'!J11` …) listesi;

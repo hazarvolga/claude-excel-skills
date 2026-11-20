@@ -61,6 +61,11 @@ Tek mesajda, en fazla şu dört şey:
    Büyük harf etiketlerde Python `str.upper()` yerine `xk.buyuk_harf()` kullan (`TEKLİF NO`, `TEKLIF NO` değil).
 9. Mühendislik ve maliyet sayıları (miktar, birim fiyat, oran) kullanıcıdan ya da kaynağından gelir; değiştirme,
    yuvarlama, "düzeltme" yapma. Şüpheli bir değer görürsen kullanıcıya sor.
+10. **Ad da uydurma.** İş grubu, bölüm, firma, proje adı kullanıcıdan gelir. Kullanıcı iş grubu vermediyse sor;
+    soramıyorsan tüm kalemleri tek grupta ("İşler") topla ve bunu söyle. Kendi sınıflandırmanı ("Kaba yapı" gibi)
+    kullanıcının adı gibi yazma.
+11. **Eksik girdiyi görünür kıl.** Fiyatı ya da miktarı verilmeyen kalem varsa icmalin altına "Şu kalemlerin birim
+    fiyatı girilmedi, tutarları 0 sayıldı: …" notu koy ve kullanıcıya da söyle.
 
 ## 3. Kurma sırası
 

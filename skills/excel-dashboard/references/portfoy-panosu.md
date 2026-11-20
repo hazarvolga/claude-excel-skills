@@ -18,7 +18,7 @@ Gerçek Excel Tablosu `Projeler` (`xk.tablo`), bir satır = bir proje:
 | Kazanılmış değer | `=[@Bütçe]*[@[Fiziksel ilerleme %]]` | formül |
 | Maliyet sapması | `=[@[Kazanılmış değer]]-[@[Gerçekleşen maliyet]]` (eksi = aşım) | formül |
 | CPI | `=IFERROR([@[Kazanılmış değer]]/[@[Gerçekleşen maliyet]],0)` | formül |
-| SPI | `=IFERROR([@[Fiziksel ilerleme %]]/[@[Planlanan ilerleme %]],0)` | formül |
+| SPI | `=IF([@[Planlanan ilerleme %]]=0,1,[@[Fiziksel ilerleme %]]/[@[Planlanan ilerleme %]])` (henüz başlamamış proje gecikmiş sayılmaz) | formül |
 | Gecikme (gün) | `=MAX(0,[@[Tahmini bitiş]]-[@[Planlanan bitiş]])` | formül |
 | Durum | `=IF(OR([@CPI]<ESIK_KOTU,[@SPI]<ESIK_KOTU),"Kritik",IF(OR([@CPI]<ESIK_UYARI,[@SPI]<ESIK_UYARI),"Dikkat","Yolunda"))` | formül |
 
@@ -39,10 +39,14 @@ Alt: Proje tablosu özeti (Proje, ilerleme veri çubuğu, CPI, SPI, gecikme, dur
 
 - Portföy CPI = `=IFERROR(SUM(Kazanılmış değer)/SUM(Gerçekleşen maliyet),0)`; proje CPI'larının ortalaması değil.
 - Geciken proje = `=COUNTIF(Projeler[Gecikme (gün)],">0")`.
+- Filtre listesi Parametreler'de: "Tümü" + kişiler + birkaç boş girdi hücresi (yeni kişi elle eklenir); açılır liste
+  bu aralığa bağlanır.
 - Filtre "Tümü" iken toplamlar tüm tablo, aksi halde `SUMIFS(…,Projeler[Proje müdürü],$D$6)`;
   iki durumu `IF($D$6="Tümü",SUM(…),SUMIFS(…))` ile ayır.
-- Yatay çubukta proje sayısı 8'i geçerse en büyük 8 proje grafik verisi bloğunda `LARGE`/`INDEX` ile seçilir,
-  gerisi tabloda kalır (grafik okunur kalsın).
+- Yatay çubuk grafik verisi bloğu **proje sayısı kadar yuva, en çok 8**: 8'i geçerse en büyük 8 proje `LARGE`/`INDEX`
+  ile seçilir, gerisi tabloda kalır. Boş yuva bırakma (grafiğin yarısı boş görünür).
+- Durum halkasının dilimleri durum renkleriyle (Yolunda `t.iyi`, Dikkat `t.uyari`, Kritik `t.kotu`; renksiz temada
+  desen); sıfır dilimin etiketi `0%;;` biçimiyle gizli.
 - Durum renkleri `xk.durum_renkleri` (Yolunda iyi, Dikkat uyarı, Kritik kötü); ilerleme `xk.veri_cubugu`.
 - Grafik verisi bloğu ve etiket biçimleri için `excel-charts` kurallarına uy (etiket hücresinde ölçek formülle).
 
