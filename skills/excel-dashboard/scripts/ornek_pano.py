@@ -78,6 +78,9 @@ def pano_kur(wb, t):
     xk.zemin(ws, t, "A1:Z60")
     xk.sayfa_basligi(ws, t, "Satış ve Maliyet Panosu", "2026 · tüm değerler Veri sayfasından formülle gelir",
                      hucre="B2", genislik=23)
+    if t.ad == "teknik":  # teknik temanın kimliği: pafta antedi
+        xk.antet(ws, t, "Q2:X3", [("Proje", "Örnek"), ("Belge no", "PNO-001"), ("Rev.", "A"),
+                                  ("Tarih", "=" + xk.turkce_bugun())])
     # Filtre satırı (açılır liste + seçime bağlı formül)
     ws["B6"].value = "Bölge"
     ws["B6"].font = xk.yazi(t, 9, kalin=True, renk=t.ara)

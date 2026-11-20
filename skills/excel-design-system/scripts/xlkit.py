@@ -543,6 +543,38 @@ def hucre_araligi(sutun1: int, satir1: int, sutun_say: int, satir_say: int) -> s
     return f"{get_column_letter(sutun1)}{satir1}:{get_column_letter(sutun1 + sutun_say - 1)}{satir1 + satir_say - 1}"
 
 
+def antet(ws, t: Tema, alan: str, alanlar: list[tuple[str, str]]):
+    """Teknik pafta antedi gibi bilgi bloğu: alanı len(alanlar) eşit gruba böler; her grupta üst satır etiket
+    (8 pt, ikincil renk, BÜYÜK HARF), alt satırlar birleşik değer (10 pt, rakam yazısı). Değer formül olabilir.
+    Dış kenar orta kalınlık mürekkep, iç ayraçlar ince çizgi rengi. Her temada kullanılabilir."""
+    c1, r1, c2, r2 = range_boundaries(alan)
+    sutun, adet = c2 - c1 + 1, len(alanlar)
+    if adet == 0 or sutun < adet or sutun % adet or r2 <= r1:
+        raise ValueError(f"antet alanı {adet} alan için dar ya da eşit bölünmüyor: {alan} "
+                         f"({sutun} sütun, {r2 - r1 + 1} satır; sütun sayısı alan sayısının katı, en az 2 satır olmalı)")
+    genislik = sutun // adet
+    dis, ic = Side(style="medium", color=t.murekkep), ince(t.cizgi)
+    for k, (etiket, deger) in enumerate(alanlar):
+        g1, g2 = c1 + k * genislik, c1 + (k + 1) * genislik - 1
+        h1, h2 = get_column_letter(g1), get_column_letter(g2)
+        if genislik > 1:
+            ws.merge_cells(f"{h1}{r1}:{h2}{r1}")
+        ws.merge_cells(f"{h1}{r1 + 1}:{h2}{r2}")
+        e = ws.cell(r1, g1, etiket.upper())
+        e.font = yazi(t, 8, renk=t.ara)
+        e.alignment = Alignment(indent=1, vertical="bottom")
+        d = ws.cell(r1 + 1, g1, deger)
+        d.font = yazi(t, 10, rakam=True)
+        d.alignment = Alignment(indent=1, vertical="center", shrink_to_fit=True)
+        for r in range(r1, r2 + 1):
+            for col in range(g1, g2 + 1):
+                ws.cell(r, col).border = Border(
+                    left=(dis if col == c1 else ic) if col == g1 else None,
+                    right=dis if col == c2 else None,
+                    top=dis if r == r1 else (ic if r == r1 + 1 else None),
+                    bottom=dis if r == r2 else None)
+
+
 def baski(ws, t: Tema, ust_metin: str = "&A", alt_metin: str = "", yatay: bool = True, alan: str | None = None,
           tek_sayfa: bool = False):
     """A4 baskı. tek_sayfa=True panolar içindir (genişlik ve yükseklik bir sayfaya); tablolar için False."""

@@ -190,3 +190,45 @@ def test_renksiz_desenli_dilim_etiketi_zeminli():
     etiketler = ch.series[0].dLbls.dLbl
     assert _renk(etiketler[1].spPr.solidFill) == "FFFFFF"
     assert etiketler[0].spPr is None
+
+
+# ---------------------------------------------------------------- antet
+
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+
+import pytest  # noqa: E402
+from openpyxl import load_workbook  # noqa: E402
+
+from conftest import SKILLS  # noqa: E402
+
+ALANLAR = [("Proje", "Örnek"), ("Belge no", "PNO-001"), ("Rev.", "A"), ("Tarih", "=TODAY()")]
+
+
+def test_antet_hucreleri():
+    ws = Workbook().active
+    xk.antet(ws, xk.tema("teknik"), "B2:I4", ALANLAR)
+    assert ws["B2"].value == "PROJE" and ws["D2"].value == "BELGE NO"
+    assert ws["B3"].value == "Örnek" and ws["H3"].value == "=TODAY()"
+    birlesik = {str(r) for r in ws.merged_cells.ranges}
+    assert {"B2:C2", "D2:E2", "B3:C4", "H3:I4"} <= birlesik
+    assert ws["B2"].border.left.style == "medium"
+    assert ws["B3"].font.name == "Consolas"
+
+
+def test_antet_dar_alan_hata():
+    with pytest.raises(ValueError, match="dar"):
+        xk.antet(Workbook().active, xk.tema("teknik"), "B2:C4", ALANLAR)
+
+
+def _pano_degerleri(tmp_path, tema):
+    cikti = tmp_path / f"{tema}.xlsx"
+    subprocess.run([sys.executable, "-I", str(SKILLS / "excel-dashboard/scripts/ornek_pano.py"), str(cikti), tema],
+                   check=True, capture_output=True, timeout=120)
+    ws = load_workbook(cikti)["Pano"]
+    return {c.value for satir in ws.iter_rows() for c in satir if isinstance(c.value, str)}
+
+
+def test_ornek_pano_teknik_antet(tmp_path):
+    assert "BELGE NO" in _pano_degerleri(tmp_path, "teknik")
+    assert "BELGE NO" not in _pano_degerleri(tmp_path, "kurumsal")
