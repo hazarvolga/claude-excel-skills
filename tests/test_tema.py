@@ -232,3 +232,26 @@ def _pano_degerleri(tmp_path, tema):
 def test_ornek_pano_teknik_antet(tmp_path):
     assert "BELGE NO" in _pano_degerleri(tmp_path, "teknik")
     assert "BELGE NO" not in _pano_degerleri(tmp_path, "kurumsal")
+
+
+# ---------------------------------------------------------------- son inceleme düzeltmeleri
+
+
+def test_renksiz_yigilmis_cubuk_etiketi_okunur():
+    ws = Workbook().active
+    for i in range(1, 4):
+        ws.append([f"k{i}", i, i * 2, i * 3])
+    ch = BarChart(grouping="stacked", overlap=100)
+    ch.add_data(Reference(ws, min_col=2, max_col=4, min_row=1, max_row=3))
+    xk.grafik_stili(ch, xk.tema("baski"), "Yığılmış")
+    duz, desenli = ch.series[0].dLbls, ch.series[1].dLbls
+    assert _renk(duz.txPr.p[0].pPr.defRPr.solidFill) == "FFFFFF"       # düz mürekkep çubukta kâğıt rengi
+    assert _renk(desenli.txPr.p[0].pPr.defRPr.solidFill) == "000000"   # desenli çubukta mürekkep
+    assert _renk(desenli.spPr.solidFill) == "FFFFFF"                   # ve kâğıt zemin
+
+
+def test_antet_tek_hucre_birlestirmez():
+    ws = Workbook().active
+    xk.antet(ws, xk.tema("teknik"), "Q2:T3", ALANLAR)
+    assert all(":" in str(r) for r in ws.merged_cells.ranges)
+    assert ws["R3"].value == "PNO-001"

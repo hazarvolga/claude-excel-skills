@@ -415,10 +415,14 @@ def grafik_stili(chart, t: Tema, baslik: str, deger: str = "sayi", etiket: bool 
                 seri.graphicalProperties = GraphicalProperties(solidFill=renk, ln=LineProperties(noFill=True))
             seri.invertIfNegative = False              # negatif çubuk beyaza dönmesin
             if etiket:
-                koyu = _koyu_mu(renk)
+                # Renksiz temada yalnız düz mürekkep çubuk koyudur; desenli çubuğun zemini kâğıt rengidir.
+                koyu = DESENLER[i % len(DESENLER)] == "solid" if t.renksiz else _koyu_mu(renk)
                 seri.dLbls = DataLabelList(showVal=True, showSerName=False, showCatName=False, showLegendKey=False,
                                            numFmt=etiket_kodu, dLblPos="ctr" if yigin else "outEnd")
-                seri.dLbls.txPr = _metin(t, 800, "FFFFFF" if (yigin and koyu) else t.murekkep, yigin)
+                seri.dLbls.txPr = _metin(t, 800, (t.kagit if t.renksiz else "FFFFFF") if (yigin and koyu)
+                                         else t.murekkep, yigin)
+                if t.renksiz and yigin and not koyu:  # desen üstünde etiket okunsun
+                    seri.dLbls.spPr = GraphicalProperties(solidFill=t.kagit, ln=LineProperties(noFill=True))
         elif pasta:
             for j in range(12):
                 n = DataPoint(idx=j)
@@ -559,7 +563,8 @@ def antet(ws, t: Tema, alan: str, alanlar: list[tuple[str, str]]):
         h1, h2 = get_column_letter(g1), get_column_letter(g2)
         if genislik > 1:
             ws.merge_cells(f"{h1}{r1}:{h2}{r1}")
-        ws.merge_cells(f"{h1}{r1 + 1}:{h2}{r2}")
+        if genislik > 1 or r2 > r1 + 1:  # tek hücre birleştirmesi Excel'de onarım uyarısı verir
+            ws.merge_cells(f"{h1}{r1 + 1}:{h2}{r2}")
         e = ws.cell(r1, g1, etiket.upper())
         e.font = yazi(t, 8, renk=t.ara)
         e.alignment = Alignment(indent=1, vertical="bottom")
