@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import io
 import os
-import subprocess
+import sys
 from dataclasses import dataclass, field, replace
 
 from openpyxl.chart.axis import ChartLines
@@ -33,6 +33,11 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter, range_boundaries
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.table import Table, TableStyleInfo
+
+_BURA = os.path.dirname(os.path.abspath(__file__))
+if _BURA not in sys.path:
+    sys.path.insert(0, _BURA)
+import motor as _motor  # noqa: E402  (aynı klasördeki motor.py)
 
 # ---------------------------------------------------------------- tema
 
@@ -507,39 +512,18 @@ def dondur(ws, hucre: str):
     ws.freeze_panes = hucre
 
 
-# ---------------------------------------------------------------- Excel ile hesapla, önizle
+# ---------------------------------------------------------------- hesapla, önizle (motor.py)
 
 
-def _applescript(betik: str, zaman=300):
-    subprocess.run(["osascript", "-e", f"with timeout of {zaman} seconds\n{betik}\nend timeout"], check=True)
-
-
-def _excel_betigi(yol: str, ara_adim: str) -> str:
-    """Aynı adlı açık kitabı önce kapatır (yoksa Excel eski açık kopyayı kullanır), hata olsa da kapatır."""
-    ad = os.path.basename(yol)
-    return f'''tell application "Microsoft Excel"
-  try
-    close workbook "{ad}" saving no
-  end try
-  set wbk to open workbook workbook file name (POSIX file "{yol}" as text)
-  try
-    calculate full
-    {ara_adim}
-  on error hata
-    close wbk saving no
-    error hata
-  end try
-  close wbk saving no
-end tell'''
-
-
-def excel_ile_kaydet(xlsx: str, temizle: bool = True):
-    """macOS + Microsoft Excel: formülleri hesaplatıp kaydeder. openpyxl hesaplanmış değer yazmaz;
-    Quick Look, telefon, bazı okuyucular (exceljs) bu adım olmadan boş veya bozuk görür.
-    Excel kaydederken kullanıcı/şirket adını ve tam dosya yolunu yazar; temizle=True bunları siler."""
-    _applescript(_excel_betigi(os.path.abspath(xlsx), "save wbk"))
-    if temizle:
+def excel_ile_kaydet(xlsx: str, temizle: bool = True, motor: str | None = None) -> str | None:
+    """Formülleri hesaplatıp kaydeder (macOS Excel → Windows Excel; LibreOffice yalnız motor="libreoffice"
+    açıkça verilince). openpyxl hesaplanmış değer yazmaz; Quick Look, telefon, bazı okuyucular (exceljs) bu adım
+    olmadan boş veya bozuk görür. Kaydeden program kullanıcı/şirket adını ve tam dosya yolunu yazar;
+    temizle=True bunları siler. Döndürür: kullanılan motor ya da None (motor yok: uyarı verilir)."""
+    kullanilan = _motor.hesapla_kaydet(xlsx, motor)
+    if kullanilan and temizle:
         meta_temizle(xlsx)
+    return kullanilan
 
 
 def meta_temizle(xlsx: str, yazar: str = ""):
@@ -572,8 +556,9 @@ def meta_temizle(xlsx: str, yazar: str = ""):
     shutil.move(gecici, xlsx)
 
 
-def onizle(xlsx: str, cikti_dizin: str, dpi: int = 150, max_genislik: int = 2000) -> list[str]:
-    """Kitabı Excel ile PDF'e kaydeder, her sayfayı PNG çizer (pymupdf + Pillow). Döndürür: PNG yolları.
+def onizle(xlsx: str, cikti_dizin: str, dpi: int = 150, max_genislik: int = 2000,
+           motor: str | None = None) -> list[str]:
+    """Kitabı motorla (Excel ya da LibreOffice) PDF'e kaydeder, her sayfayı PNG çizer (pymupdf + Pillow). Döndürür: PNG yolları.
     Görsel denetim bu görüntülerle yapılır: taşma, kırpılma, üst üste binme, okunmayan etiket."""
     import pymupdf
     from PIL import Image
@@ -583,13 +568,11 @@ def onizle(xlsx: str, cikti_dizin: str, dpi: int = 150, max_genislik: int = 2000
     for eski in os.listdir(cikti_dizin):
         if eski == "onizleme.pdf" or (eski.startswith("sayfa-") and eski.endswith(".png")):
             os.remove(os.path.join(cikti_dizin, eski))
-    adim = f'save as active sheet of wbk filename (POSIX file "{pdf}" as text) file format PDF file format'
-    try:
-        _applescript(_excel_betigi(os.path.abspath(xlsx), adim))
-    except subprocess.CalledProcessError:
-        _applescript(_excel_betigi(os.path.abspath(xlsx), adim))  # Excel PDF kaydında aralıklı -50 verir
+    kullanilan = _motor.pdf_al(xlsx, pdf, motor)
+    if kullanilan is None:
+        return []
     if not os.path.exists(pdf) or os.path.getmtime(pdf) < os.path.getmtime(xlsx):
-        raise RuntimeError("PDF üretilmedi ya da kitaptan eski: Excel izin penceresini kontrol edin")
+        raise RuntimeError(f"PDF üretilmedi ya da kitaptan eski ({kullanilan}): Excel izin penceresini kontrol edin")
     cikanlar = []
     doc = pymupdf.open(pdf)
     for i, sayfa in enumerate(doc, 1):
