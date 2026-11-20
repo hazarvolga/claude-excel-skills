@@ -2,7 +2,7 @@
 name: excel-design-system
 description: "Use when an Excel workbook (.xlsx) must look professional: applying a theme or brand colors, typography, table and header styling, KPI cards, conditional formatting, Turkish number/date/currency formats, print layout, or when the user says excel tasarımı, profesyonel excel, şık tablo, kurumsal rapor, excel teması, renk paleti, biçimlendirme."
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   scope: global
 ---
 
@@ -20,7 +20,7 @@ import os, sys
 SKILL_DIR = "<bu SKILL.md dosyasının bulunduğu klasör>"   # araç klasörünü sabit yazmayın
 sys.path.insert(0, os.path.join(SKILL_DIR, "scripts"))
 import xlkit as xk
-t = xk.tema("kurumsal")                    # kurumsal | minimal | gece
+t = xk.tema("kurumsal")   # kurumsal | minimal | gece | mimari | teknik | baski | sunum
 t = xk.tema("kurumsal", vurgu="C8102E")    # marka rengi: seriler otomatik güncellenir
 ```
 
@@ -52,7 +52,9 @@ Fonksiyon listesi ve imzalar: [references/xlkit-api.md](references/xlkit-api.md)
 8. **Baskıya hazır:** A4 yatay, genişliğe sığdır, üst bilgi sayfa adı, alt bilgi sayfa no (`xk.baski`).
    Pano sayfaları `tek_sayfa=True`.
 
-Renk, yazı ve boşluk tokenlarının tamamı: [references/tema-tokenlari.md](references/tema-tokenlari.md)
+Tema seçimi (hangi tema hangi iş için), renk, yazı ve boşluk tokenları, renksiz baskı kuralları:
+[references/tema-tokenlari.md](references/tema-tokenlari.md). Kısaca: müşteriye giden belge `mimari`, keşif ve metraj
+`teknik` (+ `xk.antet()`), renksiz yazıcı `baski`, ekrana yansıtma `sunum`.
 
 ## Türkçe Excel tuzakları (hepsi ölçülmüş)
 

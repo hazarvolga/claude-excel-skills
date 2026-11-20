@@ -103,7 +103,7 @@ import os, sys
 sys.path.insert(0, "claude-excel-skills/skills/excel-design-system/scripts")  # ya da kurulu skill klasörü
 import xlkit as xk
 
-t = xk.tema("kurumsal", vurgu="C8102E")   # kurumsal | minimal | gece
+t = xk.tema("kurumsal", vurgu="C8102E")   # kurumsal | minimal | gece | mimari | teknik | baski | sunum
 xk.kpi_karti(ws, t, "B8", 5, "Toplam ciro", "=SUM(Veri!D7:D18)", "milyon")
 xk.grafik_stili(chart, t, "Aylık ciro: plan ve gerçek", deger="milyon", ay_ekseni=True)
 xk.yerlestir(ws, chart, "B12:P29")
@@ -133,7 +133,11 @@ kaydedildi; indirip açtığınızda değerler, grafikler ve filtre çalışır 
 | Minimal | [satis-maliyet-panosu-minimal.xlsx](examples/satis-maliyet-panosu-minimal.xlsx) | [PNG](examples/satis-maliyet-panosu-minimal.png) |
 | Gece (yalnız ekran) | [satis-maliyet-panosu-gece.xlsx](examples/satis-maliyet-panosu-gece.xlsx) | [PNG](examples/satis-maliyet-panosu-gece.png) |
 
-![Üç tema](docs/temalar.png)
+Yedi tema: `kurumsal`, `minimal`, `gece` (yalnız ekran), `mimari`, `teknik` (pafta antedi), `baski`
+(renksiz yazıcı, desenli grafik), `sunum` (büyük yazı). Seçim rehberi:
+[tema tokenları](skills/excel-design-system/references/tema-tokenlari.md).
+
+![Yedi tema](docs/temalar.png)
 
 Örnek verideki sayılar uydurmadır; yalnız yerleşimi ve biçimleri göstermek içindir.
 
@@ -154,6 +158,7 @@ skills/
     scripts/     ornek_pano.py
 tests/           pytest testleri
 kur.sh, kur.ps1  kurulum (macOS/Linux, Windows); kur.test.sh
+tools/           geliştirici betikleri (tema_gorseli.py)
 examples/        üç temanın Excel dosyası ve görüntüsü
 docs/            README görselleri
 ```
@@ -183,6 +188,9 @@ docs/            README görselleri
 
 ## Sürüm notları
 
+- **1.2.0:** Dört yeni tema: `mimari`, `teknik`, `baski`, `sunum`. Tema alanları `yazi_olcegi`, `rakam_yazi`,
+  `renksiz`; renksiz temada desenli ve kesikli grafikler, mürekkep durum biçimleri; `xk.antet()` bilgi bloğu;
+  `tools/tema_gorseli.py` ile yedi tema görseli.
 - **1.1.0:** Her AI aracında ve her sistemde çalışır. Sabit skill yolları kaldırıldı; `xlkit_motor.py` ile Windows Excel
   ve LibreOffice desteği; `ortam.py` ortam raporu; `kur.sh` / `kur.ps1` kurulum betikleri; skill açıklamaları
   yalnız tetikleyici koşulu söyler; testler (`tests/`, `kur.test.sh`).
