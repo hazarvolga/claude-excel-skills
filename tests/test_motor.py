@@ -1,0 +1,208 @@
+"""Motor katmanı: sırayla Excel (Mac/Windows) ve LibreOffice; sessiz geçiş yok."""
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+
+import pytest
+from openpyxl import Workbook, load_workbook
+
+import xlkit_motor as motor
+import xlkit as xk
+
+
+def _kitap(yol: Path) -> Path:
+    yol.parent.mkdir(parents=True, exist_ok=True)
+    wb = Workbook()
+    ws = wb.active
+    ws["A1"] = 2
+    ws["A2"] = "=A1*21"
+    wb.save(yol)
+    return yol
+
+
+def test_otomatik_sira_ve_gecis(monkeypatch, tmp_path):
+    monkeypatch.setattr(motor, "bulunan_motorlar", lambda: ["excel-mac", "libreoffice"])
+
+    def mac_hata(xlsx, pdf):
+        raise subprocess.CalledProcessError(1, "osascript")
+
+    def lo_pdf(xlsx, pdf):
+        Path(pdf).write_bytes(b"%PDF-1.4")
+
+    monkeypatch.setattr(motor, "_mac_pdf", mac_hata)
+    monkeypatch.setattr(motor, "_lo_pdf", lo_pdf)
+    x = _kitap(tmp_path / "k.xlsx")
+    with pytest.warns(UserWarning, match="excel-mac"):
+        assert motor.pdf_al(str(x), str(tmp_path / "k.pdf")) == "libreoffice"
+
+
+def test_motor_yoksa_uyari_ve_bos(monkeypatch, tmp_path):
+    monkeypatch.setattr(motor, "bulunan_motorlar", lambda: [])
+    x = _kitap(tmp_path / "k.xlsx")
+    with pytest.warns(UserWarning, match="görsel denetim yapılamadı"):
+        assert xk.onizle(str(x), str(tmp_path / "on")) == []
+    with pytest.warns(UserWarning, match="görsel denetim yapılamadı"):
+        assert xk.excel_ile_kaydet(str(x)) is None
+
+
+def test_libreoffice_otomatik_kaydetmede_atlanir(monkeypatch, tmp_path):
+    monkeypatch.setattr(motor, "bulunan_motorlar", lambda: ["libreoffice"])
+    monkeypatch.setattr(motor, "_lo_kaydet", lambda xlsx: pytest.fail("LibreOffice özgün dosyaya yazmamalı"))
+    x = _kitap(tmp_path / "k.xlsx")
+    once = x.read_bytes()
+    with pytest.warns(UserWarning, match="LibreOffice"):
+        assert motor.hesapla_kaydet(str(x)) is None
+    assert x.read_bytes() == once
+
+
+def test_libreoffice_komutu_yalitilmis_profil(monkeypatch, tmp_path):
+    yakalanan = {}
+
+    def sahte_run(args, **kw):
+        yakalanan["args"] = args
+        profil = next(a for a in args if a.startswith("-env:UserInstallation=file://"))
+        xcu = Path(profil.split("=", 1)[1].replace("file://", "")) / "user" / "registrymodifications.xcu"
+        yakalanan["xcu"] = xcu.read_text(encoding="utf-8")
+        cikti = Path(args[args.index("--outdir") + 1]) / "k.pdf"
+        cikti.write_bytes(b"%PDF-1.4")
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(motor, "_soffice", lambda: "/yok/soffice")
+    monkeypatch.setattr(motor.subprocess, "run", sahte_run)
+    x = _kitap(tmp_path / "k.xlsx")
+    motor._lo_pdf(str(x), str(tmp_path / "sonuc.pdf"))
+    assert "--headless" in yakalanan["args"]
+    assert "OOXMLRecalcMode" in yakalanan["xcu"] and "<value>0</value>" in yakalanan["xcu"]
+    assert "ooSetupSystemLocale" in yakalanan["xcu"] and "<value>tr-TR</value>" in yakalanan["xcu"]
+    assert (tmp_path / "sonuc.pdf").is_file()
+
+
+class _SahteCom:
+    def __init__(self, open_hata=False):
+        self.cagrilar = []
+        self.open_hata = open_hata
+        self.Visible = True
+        self.DisplayAlerts = True
+        sahte = self
+
+        class _Kitap:
+            def ExportAsFixedFormat(self, tur, yol):
+                sahte.cagrilar.append(("ExportAsFixedFormat", tur, yol))
+
+            def Save(self):
+                sahte.cagrilar.append(("Save",))
+
+            def Close(self, kaydet):
+                sahte.cagrilar.append(("Close", kaydet))
+
+        class _Kitaplar:
+            def Open(self, yol):
+                sahte.cagrilar.append(("Open", yol))
+                if sahte.open_hata:
+                    raise OSError("açılamadı")
+                return _Kitap()
+
+        self.Workbooks = _Kitaplar()
+
+    def CalculateFull(self):
+        self.cagrilar.append(("CalculateFull",))
+
+    def Quit(self):
+        self.cagrilar.append(("Quit",))
+
+
+def test_excel_win_cagri_sirasi(tmp_path):
+    com = _SahteCom()
+    motor._excel_win(str(tmp_path / "k.xlsx"), pdf=str(tmp_path / "k.pdf"), dispatch=lambda ad: com)
+    assert [c[0] for c in com.cagrilar] == ["Open", "CalculateFull", "ExportAsFixedFormat", "Close", "Quit"]
+    assert com.cagrilar[2][1:] == (0, str(tmp_path / "k.pdf"))
+    assert com.cagrilar[3] == ("Close", False)
+
+    hatali = _SahteCom(open_hata=True)
+    with pytest.raises(OSError):
+        motor._excel_win(str(tmp_path / "k.xlsx"), dispatch=lambda ad: hatali)
+    assert hatali.cagrilar[-1] == ("Quit",)
+
+
+TURKCE = Path("Teklif 2026 ş") / "çıktı.xlsx"
+
+
+@pytest.mark.skipif("libreoffice" not in motor.bulunan_motorlar(), reason="LibreOffice yok")
+def test_libreoffice_gercek_hesaplama_turkce_yol(tmp_path):
+    x = _kitap(tmp_path / TURKCE)
+    assert motor.hesapla_kaydet(str(x), motor="libreoffice") == "libreoffice"
+    assert load_workbook(x, data_only=True).active["A2"].value == 42
+    pdf = tmp_path / "sonuc.pdf"
+    assert motor.pdf_al(str(x), str(pdf), motor="libreoffice") == "libreoffice"
+    assert pdf.stat().st_size > 0
+
+
+# Excel sandbox'ı her yeni klasör için izin ister; tmp_path her koşuda yeni klasör açar. Sabit klasör bir kez onaylanır.
+EXCEL_TEST_KLASORU = Path.home() / ".cache" / "xlkit-excel-test"
+
+
+@pytest.mark.skipif("excel-mac" not in motor.bulunan_motorlar(), reason="macOS Excel yok")
+def test_excel_mac_onizle_turkce_yol():
+    x = _kitap(EXCEL_TEST_KLASORU / TURKCE)
+    assert len(xk.onizle(str(x), str(EXCEL_TEST_KLASORU / "on"), motor="excel-mac")) >= 1
+
+
+# ---------------------------------------------------------------- son inceleme düzeltmeleri
+
+
+def test_modul_adi_pypi_motor_ile_cakismaz():
+    assert xk._motor.__name__ == "xlkit_motor"
+
+
+class _ComHatasi(Exception):
+    """pywintypes.com_error gibi: OSError'dan türemez."""
+
+
+def test_excel_win_com_hatasi_motor_hatasina_doner(tmp_path):
+    com = _SahteCom()
+
+    class _Kitap:
+        def Save(self):
+            raise _ComHatasi("salt okunur")
+
+        def Close(self, kaydet):
+            com.cagrilar.append(("Close", kaydet))
+
+    com.Workbooks.Open = lambda yol: _Kitap()
+    with pytest.raises(motor.MotorHatasi, match="salt okunur"):
+        motor._excel_win(str(tmp_path / "k.xlsx"), dispatch=lambda ad: com)
+    assert com.cagrilar[-1] == ("Quit",)
+
+
+def _osascript_hatasi(mesaj):
+    def run(args, **kw):
+        assert kw.get("timeout"), "osascript zaman aşımsız çağrılmamalı"
+        raise subprocess.CalledProcessError(1, args, output="", stderr=mesaj)
+    return run
+
+
+def test_mac_pdf_yalniz_eksi_50_hatasinda_yeniden_dener(monkeypatch, tmp_path):
+    sayac = {"n": 0}
+    hata = _osascript_hatasi("execution error: The variable wbk is not defined. (-2753)")
+
+    def say(args, **kw):
+        sayac["n"] += 1
+        return hata(args, **kw)
+
+    monkeypatch.setattr(motor.subprocess, "run", say)
+    with pytest.raises(subprocess.CalledProcessError):
+        motor._mac_pdf(str(tmp_path / "k.xlsx"), str(tmp_path / "k.pdf"))
+    assert sayac["n"] == 1
+
+    sayac["n"] = 0
+    hata = _osascript_hatasi("Microsoft Excel got an error: Parameter error. (-50)")
+    with pytest.raises(subprocess.CalledProcessError):
+        motor._mac_pdf(str(tmp_path / "k.xlsx"), str(tmp_path / "k.pdf"))
+    assert sayac["n"] == 2
+
+
+def test_ayni_adli_kaydedilmemis_kitap_kapatilmaz():
+    betik = motor._excel_betigi("/tmp/rapor.xlsx", "save wbk")
+    assert "saved of" in betik
+    assert 'close workbook "rapor.xlsx" saving no\n  end try' not in betik

@@ -7,8 +7,14 @@ Kullanım:
 import os
 import sys
 from datetime import date
+from pathlib import Path
 
-sys.path.insert(0, os.path.expanduser("~/.claude/skills/excel-design-system/scripts"))
+_BURA = Path(__file__).resolve().parent
+_ADAYLAR = (_BURA.parent.parent / "excel-design-system" / "scripts", _BURA)
+_KUTUPHANE = next((a for a in _ADAYLAR if (a / "xlkit.py").is_file()), None)
+if _KUTUPHANE is None:
+    sys.exit("excel-design-system bulunamadı; skill setini kur.sh / kur.ps1 ile birlikte kurun.")
+sys.path.insert(0, str(_KUTUPHANE))
 import xlkit as xk  # noqa: E402
 from openpyxl import Workbook  # noqa: E402
 from openpyxl.chart import BarChart, DoughnutChart, LineChart, Reference  # noqa: E402
@@ -72,6 +78,9 @@ def pano_kur(wb, t):
     xk.zemin(ws, t, "A1:Z60")
     xk.sayfa_basligi(ws, t, "Satış ve Maliyet Panosu", "2026 · tüm değerler Veri sayfasından formülle gelir",
                      hucre="B2", genislik=23)
+    if t.ad == "teknik":  # teknik temanın kimliği: pafta antedi
+        xk.antet(ws, t, "Q2:X3", [("Proje", "Örnek"), ("Belge no", "PNO-001"), ("Rev.", "A"),
+                                  ("Tarih", "=" + xk.turkce_bugun())])
     # Filtre satırı (açılır liste + seçime bağlı formül)
     ws["B6"].value = "Bölge"
     ws["B6"].font = xk.yazi(t, 9, kalin=True, renk=t.ara)

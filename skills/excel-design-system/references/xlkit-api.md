@@ -1,12 +1,15 @@
 # xlkit API
 
-`~/.claude/skills/excel-design-system/scripts/xlkit.py`. Tüm fonksiyonlar `ws` (openpyxl Worksheet) ve
+`excel-design-system/scripts/xlkit.py` (skill klasörüne göre). Tüm fonksiyonlar `ws` (openpyxl Worksheet) ve
 `t` (Tema) alır. Hücre adresleri A1 biçiminde.
 
 ## Tema ve biçim
 | Fonksiyon | Ne yapar |
 |---|---|
-| `tema(ad, **degisiklik)` | Hazır tema; `vurgu=` verilirse seri listesi de güncellenir |
+| `tema(ad, **degisiklik)` | Hazır tema (`kurumsal`, `minimal`, `gece`, `mimari`, `teknik`, `baski`, `sunum`); `vurgu=` verilirse seri listesi de güncellenir |
+| `yazi(t, boyut, kalin, renk, baslik, italik, rakam)` | Tema yazısı; boyut `yazi_olcegi` ile çarpılır, `rakam=True` temanın rakam yazısını seçer |
+| `buyuk_harf(metin)` | Türkçe büyük harf (i → İ, ı → I); KPI ve antet etiketleri bunu kullanır |
+| `DESENLER`, `KESIKLER` | Renksiz temada seri/dilim desen ve çizgi kesik sırası |
 | `BICIM[anahtar]` | Sayı/tarih biçim kodu sözlüğü |
 | `etiket_bicimi(anahtar)` | Sıfırı gizleyen üç bölümlü kod (grafik verisi hücreleri için) |
 | `turkce_bugun()` | Dilden bağımsız `gg.aa.yyyy` formül parçası |
@@ -43,6 +46,7 @@
 |---|---|
 | `izgara(ws, sutun_sayisi=24, genislik=4.6)` | Pano için eşit sütun ızgarası |
 | `hucre_araligi(sutun1, satir1, sutun_say, satir_say)` | Izgara koordinatından `"B8:M23"` |
+| `antet(ws, t, alan, [(etiket, değer)])` | Pafta antedi gibi bilgi bloğu (proje, belge no, rev., tarih); sütun sayısı alan sayısının katı, en az 2 satır |
 | `baski(ws, t, ust_metin, alt_metin, yatay, alan, tek_sayfa)` | A4 baskı ayarı |
 
 ## Excel (macOS)

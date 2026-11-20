@@ -36,3 +36,23 @@ for i in range(5):
 
 Gizli sütundaki veri grafikte görünmez (Excel varsayılanı). Bloğu gizlemek gerekiyorsa
 `chart.plotVisOnly = False` verin.
+
+## LibreOffice önizleme farkları
+
+`onizle(motor="libreoffice")` Excel'siz bilgisayarlarda görsel denetim sağlar ama Excel'in birebir görüntüsü
+değildir. Örnek pano, kurumsal tema, LibreOffice 26.8 (Kasım 2026) ile Excel for Mac 16 karşılaştırması:
+
+| Fark | LibreOffice'te görünen | Excel'de |
+|---|---|---|
+| Yüzde işareti konumu (Türkçe yerel ayar) | `%86`, halka etiketleri `%34` | `86%` |
+| Yazı tipleri | Georgia / Calibri yoksa benzer yazı tipiyle değişir (genişlik farkı) | Tanımlı yazı tipi |
+| KPI etiketi girintisi | Etiket kart kenarına yapışık | Girintili |
+| KPI alt satırı (▲ / ▼ değişim) | Soluk, durum rengi uygulanmıyor | Yeşil / kırmızı |
+| Yatay çubuk lejant sırası | Ters (Harcanan, Bütçe) | Bütçe, Harcanan |
+| Sıfır ekseni | `-0,0%` | `0,0%` |
+| Sayfa üst / alt bilgisi | Görünmüyor | Görünür |
+| Desen dolgusu (`baski` teması) | Desenler daha ince ve seyrek çizilir; seriler yine ayrışır | Sık tarama |
+
+Bu farklar LibreOffice önizlemesinde hata sayılmaz; taşma, kırpılma, üst üste binme, `####` ve yanlış sayı
+yine hatadır. LibreOffice ile denetlenen dosyada sonuç raporuna "Excel'de grafik görünümü küçük farklar
+gösterebilir" notu yazılır.

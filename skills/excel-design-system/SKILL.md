@@ -1,8 +1,8 @@
 ---
 name: excel-design-system
-description: "Use when an Excel workbook (.xlsx) must look professional: applying a theme or brand colors, typography, table and header styling, KPI cards, conditional formatting, Turkish number/date/currency formats, print layout, or when the user says excel tasarımı, profesyonel excel, şık tablo, kurumsal rapor, excel teması, renk paleti, biçimlendirme. Base layer for excel-charts and excel-dashboard; holds the shared xlkit.py helper library."
+description: "Use when an Excel workbook (.xlsx) must look professional: applying a theme or brand colors, typography, table and header styling, KPI cards, conditional formatting, Turkish number/date/currency formats, print layout, or when the user says excel tasarımı, profesyonel excel, şık tablo, kurumsal rapor, excel teması, renk paleti, biçimlendirme."
 metadata:
-  version: "1.0.1"
+  version: "2.2.0"
   scope: global
 ---
 
@@ -10,20 +10,26 @@ metadata:
 
 Bu skill Excel kitabına **tutarlı bir görsel dil** verir. Grafik kuralları `excel-charts`, pano yerleşimi
 `excel-dashboard` skill'indedir; ikisi de buradaki `scripts/xlkit.py` kütüphanesini kullanır.
-Dosya okuma/yazma, formül yeniden hesaplama gibi temel işler `anthropic-skills:xlsx` skill'inin alanıdır.
+Dosya okuma/yazma gibi temel işler, araçta varsa genel xlsx skill'inin alanıdır. Bu skill `excel-charts` ve
+`excel-dashboard` için temel katmandır: ortak `scripts/xlkit.py` kütüphanesi buradadır.
 
 ## Kütüphane
 
 ```python
 import os, sys
-sys.path.insert(0, os.path.expanduser("~/.claude/skills/excel-design-system/scripts"))
+SKILL_DIR = "<bu SKILL.md dosyasının bulunduğu klasör>"   # araç klasörünü sabit yazmayın
+sys.path.insert(0, os.path.join(SKILL_DIR, "scripts"))
 import xlkit as xk
-t = xk.tema("kurumsal")                    # kurumsal | minimal | gece
+t = xk.tema("kurumsal")   # kurumsal | minimal | gece | mimari | teknik | baski | sunum
 t = xk.tema("kurumsal", vurgu="C8102E")    # marka rengi: seriler otomatik güncellenir
 ```
 
-Çalıştırma (sistem Python'una paket kurmadan):
-`uv run --no-project --with openpyxl --with pymupdf --with pillow python -I betik.py`
+İlk kullanımda ortamı denetleyin: `python3 SKILL_DIR/scripts/ortam.py`. Python sürümünü, paketleri,
+bulunan hesaplama motorlarını ve eksikleri yazar; openpyxl yoksa çıkış kodu 1 verir.
+
+Çalıştırma: `uv` varsa sistem Python'una paket kurmadan
+`uv run --no-project --with openpyxl --with pymupdf --with pillow python -I betik.py`; yoksa bir kez
+`python3 -m pip install --user openpyxl pymupdf pillow`, sonra `python3 betik.py`.
 
 Fonksiyon listesi ve imzalar: [references/xlkit-api.md](references/xlkit-api.md)
 
@@ -46,7 +52,9 @@ Fonksiyon listesi ve imzalar: [references/xlkit-api.md](references/xlkit-api.md)
 8. **Baskıya hazır:** A4 yatay, genişliğe sığdır, üst bilgi sayfa adı, alt bilgi sayfa no (`xk.baski`).
    Pano sayfaları `tek_sayfa=True`.
 
-Renk, yazı ve boşluk tokenlarının tamamı: [references/tema-tokenlari.md](references/tema-tokenlari.md)
+Tema seçimi (hangi tema hangi iş için), renk, yazı ve boşluk tokenları, renksiz baskı kuralları:
+[references/tema-tokenlari.md](references/tema-tokenlari.md). Kısaca: müşteriye giden belge `mimari`, keşif ve metraj
+`teknik` (+ `xk.antet()`), renksiz yazıcı `baski`, ekrana yansıtma `sunum`.
 
 ## Türkçe Excel tuzakları (hepsi ölçülmüş)
 
@@ -67,15 +75,34 @@ sözdizimiyle** yazılır (`#,##0.0`). Excel bunları dosyada böyle saklar ve T
 
 ## Bitti sayılmadan önce
 
-- [ ] Kitap `xk.excel_ile_kaydet()` ile Excel'de hesaplatılıp kaydedildi (macOS'ta Excel kuruluysa).
+- [ ] Kitap `xk.excel_ile_kaydet()` ile hesaplatılıp kaydedildi (Excel kuruluysa; dönüş değeri motor adıdır).
 - [ ] `xk.onizle()` ile her sayfanın görüntüsü alındı ve **açılıp bakıldı**: taşan metin, `####`,
       kırpılan grafik, yanlış biçimlenmiş sayı yok.
 - [ ] Hata hücresi yok (`#DEĞER!`, `#BAŞV!`, `#SAYI/0!`). Boş şablonda bölme formülleri `IFERROR` ile korundu.
 - [ ] Mühendislik, maliyet veya finans sayıları kaynağıyla karşılaştırılıp doğrulandı.
+- [ ] Sonuç raporunda hangi motorla denetlendiği yazıldı (`excel-mac`, `excel-win`, `libreoffice`) ya da
+      motor bulunamadığı için görsel denetimin yapılamadığı açıkça söylendi.
+- [ ] LibreOffice ile denetlendiyse "Excel'de grafik görünümü küçük farklar gösterebilir" uyarısı verildi.
 - [ ] Dosya paylaşılacaksa kişisel izler silindi: Excel kaydederken kullanıcı/şirket adını ve tam klasör
       yolunu yazar. `excel_ile_kaydet()` varsayılan olarak `meta_temizle()` çağırır.
 
-## macOS Excel otomasyonu
+## Hesaplama ve önizleme motorları
+
+`excel_ile_kaydet()` ve `onizle()` sırayla şu motorları dener; hangisinin kullanıldığını döndürür:
+
+1. `excel-mac`: macOS + Microsoft Excel (AppleScript).
+2. `excel-win`: Windows + Microsoft Excel (COM, `pywin32` gerekir). Excel görünmez açılır, yalnız açtığı kitabı kapatır.
+3. `libreoffice`: her sistemde, `soffice --headless`, yalıtılmış profil (kullanıcının açık LibreOffice'ine
+   takılmaz, formüller her zaman yeniden hesaplanır, Türkçe yerel ayar). **Kaydetmede otomatik kullanılmaz**:
+   LibreOffice ile kaydetmek biçimi bozabilir. Gerekirse `excel_ile_kaydet(x, motor="libreoffice")` ile açıkça seçin.
+   Önizlemede kullanılır; Excel'den farkları: `excel-charts` skill'inde
+   `references/openpyxl-grafik-tuzaklari.md`, "LibreOffice önizleme farkları".
+
+Bir motor hata verirse nedeni uyarı olarak yazılır ve sıradakine geçilir. Hiçbiri yoksa dosya yine üretilir,
+`onizle()` boş liste, `excel_ile_kaydet()` `None` döner ve "görsel denetim yapılamadı" uyarısı verilir.
+`motor="..."` ile tek bir motor zorlanabilir; o zaman hata yükseltilir.
+
+### macOS Excel ayrıntıları
 
 - Excel sandbox'ı **her yeni dosya ve klasör için** izin penceresi açar. Pencere açık kalırsa AppleScript
   `The variable wbk is not defined` hatası verir. Kullanıcıdan izni vermesini isteyin, sonra tekrar deneyin.

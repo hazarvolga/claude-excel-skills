@@ -2,7 +2,8 @@
 
 Üç skill (excel-design-system, excel-charts, excel-dashboard) bu tek dosyayı kullanır.
 Kullanım:
-    import sys; sys.path.insert(0, os.path.expanduser("~/.claude/skills/excel-design-system/scripts"))
+    # SKILL_DIR = excel-design-system skill klasörü (bu dosyanın iki üstü); araç klasörü sabit yazılmaz
+    import sys; sys.path.insert(0, f"{SKILL_DIR}/scripts")
     import xlkit as xk
     t = xk.tema("kurumsal")
 
@@ -12,7 +13,8 @@ from __future__ import annotations
 
 import io
 import os
-import subprocess
+import re
+import sys
 from dataclasses import dataclass, field, replace
 
 from openpyxl.chart.axis import ChartLines
@@ -23,6 +25,7 @@ from openpyxl.chart.marker import DataPoint
 from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.chart.text import RichText, Text
 from openpyxl.chart.title import Title
+from openpyxl.drawing.fill import ColorChoice, PatternFillProperties
 from openpyxl.drawing.line import LineProperties
 from openpyxl.drawing.spreadsheet_drawing import AnchorMarker, TwoCellAnchor
 from openpyxl.drawing.text import CharacterProperties, Paragraph, ParagraphProperties, RegularTextRun
@@ -32,6 +35,11 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter, range_boundaries
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.table import Table, TableStyleInfo
+
+_BURA = os.path.dirname(os.path.abspath(__file__))
+if _BURA not in sys.path:
+    sys.path.insert(0, _BURA)
+import xlkit_motor as _motor  # noqa: E402  (aynı klasördeki xlkit_motor.py)
 
 # ---------------------------------------------------------------- tema
 
@@ -53,6 +61,9 @@ class Tema:
     baslik_yazi: str = "Georgia"
     govde_yazi: str = "Calibri"
     girdi: str = "FFF8E1"  # kullanıcının dolduracağı hücre zemini
+    yazi_olcegi: float = 1.0       # tüm yazı ve satır yüksekliklerinin çarpanı (sunum: 1.3)
+    rakam_yazi: str | None = None  # KPI ve antet değerleri için ayrı yazı (teknik: Consolas)
+    renksiz: bool = False          # siyah-beyaz baskı: grafikte desen ve kesik, durumda mürekkep
 
 
 TEMALAR = {
@@ -62,6 +73,16 @@ TEMALAR = {
                     seriler=("0F9D58", "202124", "9AA0A6", "DADCE0", "7BC8A4"), baslik_yazi="Calibri"),
     "gece": Tema("gece", "E8EAED", "1E2227", "262B31", "3C434C", "30363D", "9AA4AF", "F2A33A",
                  seriler=("F2A33A", "E8EAED", "7D8790", "4F5862", "E07B53"), baslik_yazi="Calibri"),
+    "mimari": Tema("mimari", "262626", "F5F5F2", "ECECE7", "D3D1CB", "E4E2DD", "6E6B66", "3D5A6C",
+                   seriler=("3D5A6C", "262626", "9A9790", "D3D1CB", "8AA6B5"), baslik_yazi="Cambria"),
+    "teknik": Tema("teknik", "1A1A1A", "FFFFFF", "F2F4F5", "9AA3AB", "D9DEE2", "5F6B75", "0B6E99",
+                   seriler=("0B6E99", "1A1A1A", "8C969E", "C5CCD2", "4FA3C7"), baslik_yazi="Calibri",
+                   rakam_yazi="Consolas"),
+    "baski": Tema("baski", "000000", "FFFFFF", "F2F2F2", "808080", "D0D0D0", "595959", "000000",
+                  seriler=("000000", "7F7F7F", "BFBFBF", "404040", "D9D9D9"), baslik_yazi="Calibri", renksiz=True),
+    "sunum": Tema("sunum", "111827", "FFFFFF", "F3F4F6", "D1D5DB", "E5E7EB", "6B7280", "7C3AED",
+                  seriler=("7C3AED", "111827", "9CA3AF", "D1D5DB", "A78BFA"), baslik_yazi="Calibri Light",
+                  yazi_olcegi=1.3),
 }
 
 
@@ -120,15 +141,48 @@ def etiket_bicimi(anahtar: str) -> str:
     return temel if ";" in temel else f"{temel};-{temel};;"
 
 
+# ---------------------------------------------------------------- renksiz baskı (baski teması)
+
+DESENLER = ("solid", "ltUpDiag", "dkDnDiag", "smGrid", "pct50", "dashHorz")  # seri/dilim sırası; solid = düz mürekkep
+KESIKLER = ("solid", "dash", "sysDot", "lgDash", "dashDot")                   # çizgi serisi sırası
+
+
+def _renksiz_bicim(kod: str) -> str:
+    """Sayı biçiminden renk belirteçlerini ([Color10], [Red] ...) siler; ▲ ▼ simgeleri kalır."""
+    return re.sub(r"\[(?:Color\d+|Red|Green|Blue|Black|White|Yellow|Magenta|Cyan)\]", "", kod)
+
+
+def _desenli(t: Tema, i: int, kenar: LineProperties) -> GraphicalProperties:
+    """Renksiz temada i. seri ya da dilim dolgusu: düz mürekkep ya da mürekkep-kâğıt tarama deseni."""
+    desen = DESENLER[i % len(DESENLER)]
+    if desen == "solid":
+        return GraphicalProperties(solidFill=t.murekkep, ln=kenar)
+    return GraphicalProperties(pattFill=PatternFillProperties(prst=desen, fgClr=ColorChoice(srgbClr=t.murekkep),
+                                                              bgClr=ColorChoice(srgbClr=t.kagit)), ln=kenar)
+
+
 # ---------------------------------------------------------------- hücre stilleri
+
+
+def buyuk_harf(metin: str) -> str:
+    """Türkçe büyük harf: i → İ, ı → I (Python'un str.upper() 'i'yi 'I' yapar, 'Teklif' → 'TEKLIF')."""
+    return metin.replace("i", "İ").replace("ı", "I").upper()
 
 
 def ince(renk: str) -> Side:
     return Side(style="thin", color=renk)
 
 
-def yazi(t: Tema, boyut=10, kalin=False, renk=None, baslik=False, italik=False) -> Font:
-    return Font(name=t.baslik_yazi if baslik else t.govde_yazi, sz=boyut, b=kalin, i=italik, color=renk or t.murekkep)
+def _olcek(t: Tema, deger: float) -> float:
+    """Satır yüksekliği gibi ölçüleri temanın yazı ölçeğiyle büyütür."""
+    return round(deger * t.yazi_olcegi, 1)
+
+
+def yazi(t: Tema, boyut=10, kalin=False, renk=None, baslik=False, italik=False, rakam=False) -> Font:
+    """rakam=True: temanın rakam_yazi'sı varsa onu kullanır (teknik: Consolas). Boyut yazi_olcegi ile çarpılır,
+    yarım puntoya yuvarlanır."""
+    ad = t.rakam_yazi if rakam and t.rakam_yazi else (t.baslik_yazi if baslik else t.govde_yazi)
+    return Font(name=ad, sz=round(boyut * t.yazi_olcegi * 2) / 2, b=kalin, i=italik, color=renk or t.murekkep)
 
 
 def dolgu(renk: str) -> PatternFill:
@@ -155,7 +209,7 @@ def sayfa_basligi(ws, t: Tema, metin: str, alt: str = "", hucre: str = "B2", gen
     c.value = metin
     c.font = yazi(t, 20, baslik=True)
     c.alignment = Alignment(vertical="center")
-    ws.row_dimensions[c.row].height = 32
+    ws.row_dimensions[c.row].height = _olcek(t, 32)
     if alt:
         a = ws.cell(c.row + 1, c.column, alt)
         a.font = yazi(t, 10, renk=t.ara)
@@ -190,7 +244,7 @@ def tablo_basligi(ws, t: Tema, satir: int, sutun1: int, basliklar: list[tuple[st
         c.fill = dolgu(t.murekkep)
         c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         ws.column_dimensions[get_column_letter(sutun1 + i)].width = gen
-    ws.row_dimensions[satir].height = 30
+    ws.row_dimensions[satir].height = _olcek(t, 30)
 
 
 def girdi_hucresi(ws, t: Tema, alan: str):
@@ -214,8 +268,13 @@ def acilir_liste(ws, alan: str, kaynak: str, baslik="Seçin", mesaj=""):
 
 def durum_renkleri(ws, t: Tema, alan: str, iyi: str, uyari: str, kotu: str):
     """Formül tabanlı trafik ışığı. Formüller alanın sol üst hücresine göre yazılır, örn. iyi="$F5>=0.95"."""
-    for formul, renk in ((iyi, t.iyi), (uyari, t.uyari), (kotu, t.kotu)):
-        ws.conditional_formatting.add(alan, FormulaRule(formula=[formul], font=Font(color=renk, b=True)))
+    if t.renksiz:  # anlam renkle değil yazı biçimiyle: iyi normal, uyarı italik, kötü kalın + altı çizili
+        kurallar = ((iyi, Font(color=t.murekkep)), (uyari, Font(color=t.murekkep, i=True)),
+                    (kotu, Font(color=t.murekkep, b=True, u="single")))
+    else:
+        kurallar = tuple((f, Font(color=r, b=True)) for f, r in ((iyi, t.iyi), (uyari, t.uyari), (kotu, t.kotu)))
+    for formul, yazi_bicimi in kurallar:
+        ws.conditional_formatting.add(alan, FormulaRule(formula=[formul], font=yazi_bicimi))
 
 
 def veri_cubugu(ws, t: Tema, alan: str):
@@ -224,7 +283,8 @@ def veri_cubugu(ws, t: Tema, alan: str):
 
 
 def negatif_kirmizi(ws, t: Tema, alan: str):
-    ws.conditional_formatting.add(alan, CellIsRule(operator="lessThan", formula=["0"], font=Font(color=t.kotu)))
+    yazi_bicimi = Font(color=t.murekkep, b=True) if t.renksiz else Font(color=t.kotu)
+    ws.conditional_formatting.add(alan, CellIsRule(operator="lessThan", formula=["0"], font=yazi_bicimi))
 
 
 # ---------------------------------------------------------------- KPI kartı
@@ -250,33 +310,37 @@ def kpi_karti(ws, t: Tema, sol_ust: str, sutun: int, etiket: str, formul: str, b
             c.border = Border(left=Side(style="thick", color=t.vurgu) if col == c1 else None,
                               right=kenar if col == c2 else None,
                               top=kenar if r == r1 else None, bottom=kenar if r == r1 + 2 else None)
-    e = ws.cell(r1, c1, etiket.upper())
+    e = ws.cell(r1, c1, buyuk_harf(etiket))
     e.font = yazi(t, 9, kalin=True, renk=t.ara)
     e.alignment = Alignment(indent=1, vertical="bottom")
     d = ws.cell(r1 + 1, c1, formul)
-    d.font = yazi(t, 22, kalin=True, baslik=True)
+    d.font = yazi(t, 22, kalin=True, baslik=True, rakam=True)
     d.number_format = BICIM.get(bicim, bicim)
     d.alignment = Alignment(horizontal="left", indent=1, vertical="center", shrink_to_fit=True)
     a = ws.cell(r1 + 2, c1, alt_formul if alt_formul else alt_metin)
     a.font = yazi(t, 9, renk=t.ara)
     a.alignment = Alignment(horizontal="left", indent=1, vertical="top")
     if alt_formul:
-        a.number_format = BICIM.get(alt_bicim, alt_bicim)
-    ws.row_dimensions[r1].height = 20
-    ws.row_dimensions[r1 + 1].height = 36
-    ws.row_dimensions[r1 + 2].height = 18
+        kod = BICIM.get(alt_bicim, alt_bicim)
+        a.number_format = _renksiz_bicim(kod) if t.renksiz else kod
+    ws.row_dimensions[r1].height = _olcek(t, 20)
+    ws.row_dimensions[r1 + 1].height = _olcek(t, 36)
+    ws.row_dimensions[r1 + 2].height = _olcek(t, 18)
 
 
 # ---------------------------------------------------------------- grafikler
 
 
-def _metin(t: Tema, boyut: int, renk=None, kalin=False) -> RichText:
-    oz = CharacterProperties(sz=boyut, b=kalin, solidFill=renk or t.ara, latin=DFont(typeface=t.govde_yazi))
+def _metin(t: Tema, boyut: int, renk=None, kalin=False, olcekli=True) -> RichText:
+    """olcekli=False: eksen etiketi gibi dar alandaki yazı temanın yazı ölçeğiyle büyütülmez."""
+    oz = CharacterProperties(sz=round(boyut * (t.yazi_olcegi if olcekli else 1)), b=kalin, solidFill=renk or t.ara,
+                             latin=DFont(typeface=t.govde_yazi))
     return RichText(p=[Paragraph(pPr=ParagraphProperties(defRPr=oz), endParaRPr=oz)])
 
 
 def _baslik(t: Tema, metin: str) -> Title:
-    oz = CharacterProperties(sz=1100, b=True, solidFill=t.murekkep, latin=DFont(typeface=t.govde_yazi))
+    oz = CharacterProperties(sz=round(1100 * t.yazi_olcegi), b=True, solidFill=t.murekkep,
+                             latin=DFont(typeface=t.govde_yazi))
     p = Paragraph(pPr=ParagraphProperties(defRPr=oz), r=[RegularTextRun(rPr=oz, t=metin)])
     return Title(tx=Text(rich=RichText(p=[p])), overlay=False)
 
@@ -320,7 +384,7 @@ def grafik_stili(chart, t: Tema, baslik: str, deger: str = "sayi", etiket: bool 
         chart.plot_area.layout = Layout(manualLayout=ManualLayout(x=0.03, y=0.14, w=0.94, h=1 - 0.14 - alt_pay - 0.04))
         for eksen in (chart.x_axis, chart.y_axis):
             eksen.delete = False
-            eksen.txPr = _metin(t, 900)
+            eksen.txPr = _metin(t, 900, olcekli=False)
             eksen.spPr = GraphicalProperties(ln=LineProperties(solidFill=t.cizgi, w=6350))
             eksen.majorTickMark = "none"
             eksen.minorTickMark = "none"
@@ -333,29 +397,43 @@ def grafik_stili(chart, t: Tema, baslik: str, deger: str = "sayi", etiket: bool 
             chart.x_axis.numFmt = NumFmt(formatCode=BICIM[anahtar], sourceLinked=False)
     yigin = getattr(chart, "grouping", None) in ("stacked", "percentStacked")
     for i, seri in enumerate(chart.series):
-        renk = t.seriler[i % len(t.seriler)]
+        renk = t.murekkep if t.renksiz else t.seriler[i % len(t.seriler)]
         if tur in ("LineChart", "AreaChart", "ScatterChart"):
-            seri.graphicalProperties = GraphicalProperties(ln=LineProperties(solidFill=renk, w=25400))
+            cizgi = LineProperties(solidFill=renk, w=25400)
+            if t.renksiz:
+                cizgi.prstDash = KESIKLER[i % len(KESIKLER)]
+            seri.graphicalProperties = GraphicalProperties(ln=cizgi)
             if tur == "AreaChart":
-                seri.graphicalProperties.solidFill = renk
+                if t.renksiz:
+                    seri.graphicalProperties = _desenli(t, i, cizgi)
+                else:
+                    seri.graphicalProperties.solidFill = renk
             seri.smooth = False
             if etiket and tur == "LineChart" and len(chart.series) == 1:
                 seri.dLbls = DataLabelList(showVal=True, showSerName=False, showCatName=False, showLegendKey=False,
                                            numFmt=etiket_kodu, dLblPos="t")
                 seri.dLbls.txPr = _metin(t, 800, t.murekkep)
         elif tur == "BarChart":
-            seri.graphicalProperties = GraphicalProperties(solidFill=renk, ln=LineProperties(noFill=True))
+            if t.renksiz:
+                seri.graphicalProperties = _desenli(t, i, LineProperties(solidFill=t.murekkep, w=6350))
+            else:
+                seri.graphicalProperties = GraphicalProperties(solidFill=renk, ln=LineProperties(noFill=True))
             seri.invertIfNegative = False              # negatif çubuk beyaza dönmesin
             if etiket:
-                koyu = _koyu_mu(renk)
+                # Renksiz temada yalnız düz mürekkep çubuk koyudur; desenli çubuğun zemini kâğıt rengidir.
+                koyu = DESENLER[i % len(DESENLER)] == "solid" if t.renksiz else _koyu_mu(renk)
                 seri.dLbls = DataLabelList(showVal=True, showSerName=False, showCatName=False, showLegendKey=False,
                                            numFmt=etiket_kodu, dLblPos="ctr" if yigin else "outEnd")
-                seri.dLbls.txPr = _metin(t, 800, "FFFFFF" if (yigin and koyu) else t.murekkep, yigin)
+                seri.dLbls.txPr = _metin(t, 800, (t.kagit if t.renksiz else "FFFFFF") if (yigin and koyu)
+                                         else t.murekkep, yigin)
+                if t.renksiz and yigin and not koyu:  # desen üstünde etiket okunsun
+                    seri.dLbls.spPr = GraphicalProperties(solidFill=t.kagit, ln=LineProperties(noFill=True))
         elif pasta:
             for j in range(12):
                 n = DataPoint(idx=j)
-                n.graphicalProperties = GraphicalProperties(solidFill=t.seriler[j % len(t.seriler)],
-                                                            ln=LineProperties(solidFill=t.kagit, w=12700))
+                kenar = LineProperties(solidFill=t.kagit, w=12700)
+                n.graphicalProperties = (_desenli(t, j, kenar) if t.renksiz else
+                                         GraphicalProperties(solidFill=t.seriler[j % len(t.seriler)], ln=kenar))
                 seri.dPt.append(n)
     if tur == "BarChart":
         chart.gapWidth = 60
@@ -370,9 +448,15 @@ def grafik_stili(chart, t: Tema, baslik: str, deger: str = "sayi", etiket: bool 
         for seri in chart.series:
             etiketler = []
             for j in range(12):
-                renk = t.seriler[j % len(t.seriler)]
-                yazi_rengi = "FFFFFF" if _koyu_mu(renk) else "1B1F23"
-                etiketler.append(DataLabel(idx=j, txPr=_metin(t, 900, yazi_rengi, True), **ortak))
+                if t.renksiz:  # düz mürekkep dilimde kâğıt rengi, desenli dilimde mürekkep
+                    yazi_rengi = t.kagit if DESENLER[j % len(DESENLER)] == "solid" else t.murekkep
+                else:
+                    renk = t.seriler[j % len(t.seriler)]
+                    yazi_rengi = "FFFFFF" if _koyu_mu(renk) else "1B1F23"
+                zemin = None
+                if t.renksiz and DESENLER[j % len(DESENLER)] != "solid":  # desen üstünde etiket okunsun
+                    zemin = GraphicalProperties(solidFill=t.kagit, ln=LineProperties(noFill=True))
+                etiketler.append(DataLabel(idx=j, txPr=_metin(t, 900, yazi_rengi, True), spPr=zemin, **ortak))
             seri.dLbls = DataLabelList(dLbl=etiketler, **ortak)
     return chart
 
@@ -468,6 +552,39 @@ def hucre_araligi(sutun1: int, satir1: int, sutun_say: int, satir_say: int) -> s
     return f"{get_column_letter(sutun1)}{satir1}:{get_column_letter(sutun1 + sutun_say - 1)}{satir1 + satir_say - 1}"
 
 
+def antet(ws, t: Tema, alan: str, alanlar: list[tuple[str, str]]):
+    """Teknik pafta antedi gibi bilgi bloğu: alanı len(alanlar) eşit gruba böler; her grupta üst satır etiket
+    (8 pt, ikincil renk, BÜYÜK HARF), alt satırlar birleşik değer (10 pt, rakam yazısı). Değer formül olabilir.
+    Dış kenar orta kalınlık mürekkep, iç ayraçlar ince çizgi rengi. Her temada kullanılabilir."""
+    c1, r1, c2, r2 = range_boundaries(alan)
+    sutun, adet = c2 - c1 + 1, len(alanlar)
+    if adet == 0 or sutun < adet or sutun % adet or r2 <= r1:
+        raise ValueError(f"antet alanı {adet} alan için dar ya da eşit bölünmüyor: {alan} "
+                         f"({sutun} sütun, {r2 - r1 + 1} satır; sütun sayısı alan sayısının katı, en az 2 satır olmalı)")
+    genislik = sutun // adet
+    dis, ic = Side(style="medium", color=t.murekkep), ince(t.cizgi)
+    for k, (etiket, deger) in enumerate(alanlar):
+        g1, g2 = c1 + k * genislik, c1 + (k + 1) * genislik - 1
+        h1, h2 = get_column_letter(g1), get_column_letter(g2)
+        if genislik > 1:
+            ws.merge_cells(f"{h1}{r1}:{h2}{r1}")
+        if genislik > 1 or r2 > r1 + 1:  # tek hücre birleştirmesi Excel'de onarım uyarısı verir
+            ws.merge_cells(f"{h1}{r1 + 1}:{h2}{r2}")
+        e = ws.cell(r1, g1, buyuk_harf(etiket))
+        e.font = yazi(t, 8, renk=t.ara)
+        e.alignment = Alignment(indent=1, vertical="bottom")
+        d = ws.cell(r1 + 1, g1, deger)
+        d.font = yazi(t, 10, rakam=True)
+        d.alignment = Alignment(indent=1, vertical="center", shrink_to_fit=True)
+        for r in range(r1, r2 + 1):
+            for col in range(g1, g2 + 1):
+                ws.cell(r, col).border = Border(
+                    left=(dis if col == c1 else ic) if col == g1 else None,
+                    right=dis if col == c2 else None,
+                    top=dis if r == r1 else (ic if r == r1 + 1 else None),
+                    bottom=dis if r == r2 else None)
+
+
 def baski(ws, t: Tema, ust_metin: str = "&A", alt_metin: str = "", yatay: bool = True, alan: str | None = None,
           tek_sayfa: bool = False):
     """A4 baskı. tek_sayfa=True panolar içindir (genişlik ve yükseklik bir sayfaya); tablolar için False."""
@@ -499,46 +616,25 @@ def gezinme(wb, t: Tema, menu_sayfa: str, hucre: str = "A1", metin: str = "← M
         c = ws[hucre]
         c.value = metin
         c.hyperlink = f"#'{menu_sayfa}'!A1"
-        c.font = Font(name=t.govde_yazi, sz=9, u="single", color=t.vurgu)
+        c.font = Font(name=t.govde_yazi, sz=round(9 * t.yazi_olcegi * 2) / 2, u="single", color=t.vurgu)
 
 
 def dondur(ws, hucre: str):
     ws.freeze_panes = hucre
 
 
-# ---------------------------------------------------------------- Excel ile hesapla, önizle
+# ---------------------------------------------------------------- hesapla, önizle (xlkit_motor.py)
 
 
-def _applescript(betik: str, zaman=300):
-    subprocess.run(["osascript", "-e", f"with timeout of {zaman} seconds\n{betik}\nend timeout"], check=True)
-
-
-def _excel_betigi(yol: str, ara_adim: str) -> str:
-    """Aynı adlı açık kitabı önce kapatır (yoksa Excel eski açık kopyayı kullanır), hata olsa da kapatır."""
-    ad = os.path.basename(yol)
-    return f'''tell application "Microsoft Excel"
-  try
-    close workbook "{ad}" saving no
-  end try
-  set wbk to open workbook workbook file name (POSIX file "{yol}" as text)
-  try
-    calculate full
-    {ara_adim}
-  on error hata
-    close wbk saving no
-    error hata
-  end try
-  close wbk saving no
-end tell'''
-
-
-def excel_ile_kaydet(xlsx: str, temizle: bool = True):
-    """macOS + Microsoft Excel: formülleri hesaplatıp kaydeder. openpyxl hesaplanmış değer yazmaz;
-    Quick Look, telefon, bazı okuyucular (exceljs) bu adım olmadan boş veya bozuk görür.
-    Excel kaydederken kullanıcı/şirket adını ve tam dosya yolunu yazar; temizle=True bunları siler."""
-    _applescript(_excel_betigi(os.path.abspath(xlsx), "save wbk"))
-    if temizle:
+def excel_ile_kaydet(xlsx: str, temizle: bool = True, motor: str | None = None) -> str | None:
+    """Formülleri hesaplatıp kaydeder (macOS Excel → Windows Excel; LibreOffice yalnız motor="libreoffice"
+    açıkça verilince). openpyxl hesaplanmış değer yazmaz; Quick Look, telefon, bazı okuyucular (exceljs) bu adım
+    olmadan boş veya bozuk görür. Kaydeden program kullanıcı/şirket adını ve tam dosya yolunu yazar;
+    temizle=True bunları siler. Döndürür: kullanılan motor ya da None (motor yok: uyarı verilir)."""
+    kullanilan = _motor.hesapla_kaydet(xlsx, motor)
+    if kullanilan and temizle:
         meta_temizle(xlsx)
+    return kullanilan
 
 
 def meta_temizle(xlsx: str, yazar: str = ""):
@@ -571,8 +667,9 @@ def meta_temizle(xlsx: str, yazar: str = ""):
     shutil.move(gecici, xlsx)
 
 
-def onizle(xlsx: str, cikti_dizin: str, dpi: int = 150, max_genislik: int = 2000) -> list[str]:
-    """Kitabı Excel ile PDF'e kaydeder, her sayfayı PNG çizer (pymupdf + Pillow). Döndürür: PNG yolları.
+def onizle(xlsx: str, cikti_dizin: str, dpi: int = 150, max_genislik: int = 2000,
+           motor: str | None = None) -> list[str]:
+    """Kitabı motorla (Excel ya da LibreOffice) PDF'e kaydeder, her sayfayı PNG çizer (pymupdf + Pillow). Döndürür: PNG yolları.
     Görsel denetim bu görüntülerle yapılır: taşma, kırpılma, üst üste binme, okunmayan etiket."""
     import pymupdf
     from PIL import Image
@@ -582,13 +679,11 @@ def onizle(xlsx: str, cikti_dizin: str, dpi: int = 150, max_genislik: int = 2000
     for eski in os.listdir(cikti_dizin):
         if eski == "onizleme.pdf" or (eski.startswith("sayfa-") and eski.endswith(".png")):
             os.remove(os.path.join(cikti_dizin, eski))
-    adim = f'save as active sheet of wbk filename (POSIX file "{pdf}" as text) file format PDF file format'
-    try:
-        _applescript(_excel_betigi(os.path.abspath(xlsx), adim))
-    except subprocess.CalledProcessError:
-        _applescript(_excel_betigi(os.path.abspath(xlsx), adim))  # Excel PDF kaydında aralıklı -50 verir
+    kullanilan = _motor.pdf_al(xlsx, pdf, motor)
+    if kullanilan is None:
+        return []
     if not os.path.exists(pdf) or os.path.getmtime(pdf) < os.path.getmtime(xlsx):
-        raise RuntimeError("PDF üretilmedi ya da kitaptan eski: Excel izin penceresini kontrol edin")
+        raise RuntimeError(f"PDF üretilmedi ya da kitaptan eski ({kullanilan}): Excel izin penceresini kontrol edin")
     cikanlar = []
     doc = pymupdf.open(pdf)
     for i, sayfa in enumerate(doc, 1):
