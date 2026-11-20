@@ -1,6 +1,6 @@
 # xlkit API
 
-`~/.claude/skills/excel-design-system/scripts/xlkit.py`. Tüm fonksiyonlar `ws` (openpyxl Worksheet) ve
+`excel-design-system/scripts/xlkit.py` (skill klasörüne göre). Tüm fonksiyonlar `ws` (openpyxl Worksheet) ve
 `t` (Tema) alır. Hücre adresleri A1 biçiminde.
 
 ## Tema ve biçim

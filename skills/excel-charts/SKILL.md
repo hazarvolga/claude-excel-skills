@@ -1,6 +1,6 @@
 ---
 name: excel-charts
-description: "Use when adding, restyling or fixing charts inside an Excel workbook with openpyxl: picking the chart type, colors, data labels, axis and number formats, placing charts so they do not overlap cells or each other, or when the user says excel grafik, grafik ekle, sütun/çizgi/pasta/halka grafik, grafikler taşıyor, etiketler bozuk, grafik profesyonel görünsün. Uses xlkit.py from excel-design-system."
+description: "Use when adding, restyling or fixing charts inside an Excel workbook with openpyxl: picking the chart type, colors, data labels, axis and number formats, placing charts so they do not overlap cells or each other, or when the user says excel grafik, grafik ekle, sütun/çizgi/pasta/halka grafik, grafikler taşıyor, etiketler bozuk, grafik profesyonel görünsün."
 metadata:
   version: "1.0.0"
   scope: global
@@ -8,12 +8,13 @@ metadata:
 
 # Excel Grafikleri
 
-Önce `excel-design-system` skill'ini okuyun: tema ve `xlkit` oradadır. Bu skill grafik **seçimi**,
+Bu skill `excel-design-system` içindeki `xlkit.py` kütüphanesini kullanır; önce o skill'i okuyun. Bu skill grafik **seçimi**,
 **tek tasarım kuralı** ve **yerleşimi** anlatır.
 
 ```python
 import os, sys
-sys.path.insert(0, os.path.expanduser("~/.claude/skills/excel-design-system/scripts"))
+SKILL_DIR = "<bu SKILL.md dosyasının bulunduğu klasör>"   # araç klasörünü sabit yazmayın
+sys.path.insert(0, os.path.join(SKILL_DIR, "..", "excel-design-system", "scripts"))
 import xlkit as xk
 from openpyxl.chart import BarChart, LineChart, DoughnutChart, Reference
 ```

@@ -7,8 +7,14 @@ Kullanım:
 import os
 import sys
 from datetime import date
+from pathlib import Path
 
-sys.path.insert(0, os.path.expanduser("~/.claude/skills/excel-design-system/scripts"))
+_BURA = Path(__file__).resolve().parent
+_ADAYLAR = (_BURA.parent.parent / "excel-design-system" / "scripts", _BURA)
+_KUTUPHANE = next((a for a in _ADAYLAR if (a / "xlkit.py").is_file()), None)
+if _KUTUPHANE is None:
+    sys.exit("excel-design-system bulunamadı; skill setini kur.sh / kur.ps1 ile birlikte kurun.")
+sys.path.insert(0, str(_KUTUPHANE))
 import xlkit as xk  # noqa: E402
 from openpyxl import Workbook  # noqa: E402
 from openpyxl.chart import BarChart, DoughnutChart, LineChart, Reference  # noqa: E402

@@ -2,7 +2,8 @@
 
 Üç skill (excel-design-system, excel-charts, excel-dashboard) bu tek dosyayı kullanır.
 Kullanım:
-    import sys; sys.path.insert(0, os.path.expanduser("~/.claude/skills/excel-design-system/scripts"))
+    # SKILL_DIR = excel-design-system skill klasörü (bu dosyanın iki üstü); araç klasörü sabit yazılmaz
+    import sys; sys.path.insert(0, f"{SKILL_DIR}/scripts")
     import xlkit as xk
     t = xk.tema("kurumsal")
 

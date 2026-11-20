@@ -1,6 +1,6 @@
 ---
 name: excel-design-system
-description: "Use when an Excel workbook (.xlsx) must look professional: applying a theme or brand colors, typography, table and header styling, KPI cards, conditional formatting, Turkish number/date/currency formats, print layout, or when the user says excel tasarımı, profesyonel excel, şık tablo, kurumsal rapor, excel teması, renk paleti, biçimlendirme. Base layer for excel-charts and excel-dashboard; holds the shared xlkit.py helper library."
+description: "Use when an Excel workbook (.xlsx) must look professional: applying a theme or brand colors, typography, table and header styling, KPI cards, conditional formatting, Turkish number/date/currency formats, print layout, or when the user says excel tasarımı, profesyonel excel, şık tablo, kurumsal rapor, excel teması, renk paleti, biçimlendirme."
 metadata:
   version: "1.0.1"
   scope: global
@@ -10,13 +10,15 @@ metadata:
 
 Bu skill Excel kitabına **tutarlı bir görsel dil** verir. Grafik kuralları `excel-charts`, pano yerleşimi
 `excel-dashboard` skill'indedir; ikisi de buradaki `scripts/xlkit.py` kütüphanesini kullanır.
-Dosya okuma/yazma, formül yeniden hesaplama gibi temel işler `anthropic-skills:xlsx` skill'inin alanıdır.
+Dosya okuma/yazma gibi temel işler, araçta varsa genel xlsx skill'inin alanıdır. Bu skill `excel-charts` ve
+`excel-dashboard` için temel katmandır: ortak `scripts/xlkit.py` kütüphanesi buradadır.
 
 ## Kütüphane
 
 ```python
 import os, sys
-sys.path.insert(0, os.path.expanduser("~/.claude/skills/excel-design-system/scripts"))
+SKILL_DIR = "<bu SKILL.md dosyasının bulunduğu klasör>"   # araç klasörünü sabit yazmayın
+sys.path.insert(0, os.path.join(SKILL_DIR, "scripts"))
 import xlkit as xk
 t = xk.tema("kurumsal")                    # kurumsal | minimal | gece
 t = xk.tema("kurumsal", vurgu="C8102E")    # marka rengi: seriler otomatik güncellenir

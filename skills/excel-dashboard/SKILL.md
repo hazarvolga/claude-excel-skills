@@ -1,6 +1,6 @@
 ---
 name: excel-dashboard
-description: "Use when building a dashboard, report cover, KPI panel or management summary sheet inside Excel: laying out KPI cards, charts and filters on a grid, wiring dropdown filters to formulas, adding navigation between sheets, or when the user says excel dashboard, excel pano, yönetim paneli, KPI kartı, rapor sayfası, özet sayfa, maliyet paneli, proje paneli. Builds on excel-design-system (xlkit) and excel-charts; includes a runnable template."
+description: "Use when building a dashboard, report cover, KPI panel or management summary sheet inside Excel: laying out KPI cards, charts and filters on a grid, wiring dropdown filters to formulas, adding navigation between sheets, or when the user says excel dashboard, excel pano, yönetim paneli, KPI kartı, rapor sayfası, özet sayfa, maliyet paneli, proje paneli."
 metadata:
   version: "1.0.0"
   scope: global
@@ -10,12 +10,14 @@ metadata:
 
 Önce `excel-design-system` (tema, xlkit) ve `excel-charts` (grafik kuralı) skill'lerini okuyun.
 
-**Hazır şablon:** `~/.claude/skills/excel-dashboard/scripts/ornek_pano.py`. Veri sayfası + pano
+Bu skill `excel-design-system` içindeki `xlkit.py` kütüphanesini ve `excel-charts` kurallarını kullanır.
+
+**Hazır şablon:** `scripts/ornek_pano.py` (bu SKILL.md'nin klasörüne göre). Veri sayfası + pano
 (4 KPI kartı, filtre, 4 grafik). Yeni pano için kopyalayıp `veri_kur()` ve `pano_kur()` içini
 değiştirin. Görüntüsü: [references/ornek-pano.png](references/ornek-pano.png)
 
 ```bash
-uv run --no-project --with openpyxl --with pymupdf --with pillow python -I ornek_pano.py cikti.xlsx kurumsal --onizle onizleme
+uv run --no-project --with openpyxl --with pymupdf --with pillow python -I scripts/ornek_pano.py cikti.xlsx kurumsal --onizle onizleme
 ```
 
 ## 1. Önce soru, sonra yerleşim
