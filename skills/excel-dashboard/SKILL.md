@@ -2,7 +2,7 @@
 name: excel-dashboard
 description: "Use when building a dashboard, report cover, KPI panel or management summary sheet inside Excel: laying out KPI cards, charts and filters on a grid, wiring dropdown filters to formulas, adding navigation between sheets, or when the user says excel dashboard, excel pano, yönetim paneli, KPI kartı, rapor sayfası, özet sayfa, maliyet paneli, proje paneli."
 metadata:
-  version: "1.2.0"
+  version: "2.0.0"
   scope: global
 ---
 

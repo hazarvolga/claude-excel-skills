@@ -2,7 +2,7 @@
 name: excel-charts
 description: "Use when adding, restyling or fixing charts inside an Excel workbook with openpyxl: picking the chart type, colors, data labels, axis and number formats, placing charts so they do not overlap cells or each other, or when the user says excel grafik, grafik ekle, sütun/çizgi/pasta/halka grafik, grafikler taşıyor, etiketler bozuk, grafik profesyonel görünsün."
 metadata:
-  version: "1.2.0"
+  version: "2.0.0"
   scope: global
 ---
 

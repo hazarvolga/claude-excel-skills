@@ -153,10 +153,16 @@ her temada kullanılabilir.
 
 ### 5.6 Yeni skill: `excel-insaat-belgeleri`
 
-Her belge bir üretici betiktir: `python3 scripts/<belge>.py CIKTI.xlsx --tema mimari --olcek apartman
-[--ornek] [--onizle DIZIN]`. `--ornek` uydurma veriyle doldurur; yoksa boş şablon üretir. Tüm toplamlar
-formüldür, girdiler sarı girdi hücresidir, her kitapta bir **Parametreler** sayfası vardır (firma, müşteri,
-proje, teklif no, revizyon, tarih, para birimi, KDV oranı, geçerlilik süresi, ödeme koşulları).
+**Karar (2026-11-20, kullanıcı): kural ağırlıklı skill.** İlk planda her belge için hazır üretici betik vardı
+(`python3 scripts/<belge>.py ... --olcek ...`). Uygulamaya başlanınca bunun skill değil şablon ürünü olduğu
+görüldü; kullanıcı kural ağırlıklı yolu seçti. `excel-insaat-belgeleri` üretici betik içermez: SKILL.md ve
+`references/` altındaki yapı rehberi yapay zekâya belgeyi nasıl kuracağını anlatır, yapay zekâ her istekte kitabı
+kullanıcının verisiyle `xlkit` üzerinden kendisi kurar. Kurallar: tüm toplamlar formül; oranlar Parametreler
+sayfasındaki girdi hücrelerinde ve tanımlı adlarla (`KDV_ORANI` gibi); ara toplamlar `SUBTOTAL(9, …)` ve
+eklenen satırı kapsayan `INDEX(…,ROW()-1)` bitişli aralık; `TEXT()` ile sayıyı metne çevirme yok; hata hücresi
+yok. Bedeli: çıktı her istekte birebir aynı olmaz; doğruluk, skill'in "bitti" listesindeki denetimlerle
+(LibreOffice/Excel ile hesaplatıp toplamları karşılaştırma) sağlanır. Aşağıdaki tablolar yapı rehberinin
+özetidir. Faz 3a uygulama planı (`plans/2026-11-20-faz3a-teklif-kesif.md`) bu kararla geçersizdir.
 
 | Belge | Sayfalar ve içerik |
 |---|---|
@@ -166,7 +172,7 @@ proje, teklif no, revizyon, tarih, para birimi, KDV oranı, geçerlilik süresi,
 | **Portföy panosu** (`excel-dashboard` içinde) | Proje başına satır; bütçe, gerçekleşen, sapma, ilerleme; KPI kartları ve grafikler |
 | **Şantiye takip tabloları** | Günlük rapor (tarih, hava, meslek bazında personel, makine, yapılan işler, notlar), aylık puantaj (gün ızgarası, hafta sonu biçimi), malzeme takip (sipariş, teslim, kalan) |
 
-**Ölçek ayarı** (`--olcek`), ayrı şablon değil, aynı üreticinin parametresidir:
+**Ölçek** ayrı şablon değil, aynı yapının ayarıdır:
 
 | Ölçek | Keşif yapısı | Tipik boyut |
 |---|---|---|
@@ -207,7 +213,8 @@ Sürüm 2.0.0 (yeni skill ve kurulum değişikliği). Her faz ayrı commit dizis
 1. **Faz 1 · Altyapı:** yol düzeltmeleri, platform katmanı, `ortam.py`, `kur.sh` / `kur.ps1`, açıklama
    düzenlemesi, testler.
 2. **Faz 2 · Temalar:** dört tema, `antet()`, örnek panonun yedi temadaki görüntüsü.
-3. **Faz 3 · Özel sektör belgeleri:** `excel-insaat-belgeleri`, portföy panosu, üç ölçek, örnek dosyalar.
+3. **Faz 3 · Özel sektör belgeleri:** `excel-insaat-belgeleri` kural ağırlıklı (3a: teklif dosyası ve keşif;
+   3b: metraj, portföy panosu, şantiye takip), üç ölçek.
 4. **Faz 4 · Kamu formatı:** ayrı tasarım belgesiyle.
 
 README, kurulum ve "Bilinen sınırlar" her fazda güncellenir. Push ve GitHub işlemleri kullanıcı onayıyla.

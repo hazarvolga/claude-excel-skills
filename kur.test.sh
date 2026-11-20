@@ -10,7 +10,7 @@ PASS=0; FAIL=0
 check() { if [ "$2" = "0" ]; then PASS=$((PASS + 1)); echo "PASS  $1"; else FAIL=$((FAIL + 1)); echo "FAIL  $1"; fi; }
 k() { HOME="$FAKE" bash "$HERE/kur.sh" "$@" >/dev/null 2>&1; }
 ok() { "$@" && echo 0 || echo 1; }
-SKILLLER=(excel-design-system excel-charts excel-dashboard)
+SKILLLER=(excel-design-system excel-charts excel-dashboard excel-insaat-belgeleri)
 hepsi_bagli() { local d="$1" s; for s in "${SKILLLER[@]}"; do [ "$(readlink "$d/$s")" = "$HERE/skills/$s" ] || return 1; done; }
 
 mkdir -p "$FAKE/.claude/skills" "$FAKE/.qoder/skills" "$FAKE/.codex/skills"

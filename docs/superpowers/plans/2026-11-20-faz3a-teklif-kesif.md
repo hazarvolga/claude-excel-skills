@@ -1,5 +1,8 @@
 # Excel skill seti · Faz 3a (teklif dosyası ve keşif cetveli) Uygulama Planı
 
+> **GEÇERSİZ (2026-11-20):** Kullanıcı üretici betik yerine kural ağırlıklı skill'i seçti. Bkz. tasarım belgesi
+> 5.6 "Karar". Bu plandaki icmal zinciri, SUBTOTAL/INDEX deseni ve ölçek kararları kural belgesine taşındı.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Dördüncü skill `excel-insaat-belgeleri`: özel sektör için keşif / birim fiyat teklif cetveli ve teklif dosyası üreticileri; villa, apartman ve büyük proje ölçeklerinde, her temada.

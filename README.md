@@ -1,10 +1,11 @@
 # Claude Excel Skills
 
-AI kod araçları için üç skill'lik bir set: Excel'de profesyonel **panolar**, **grafikler** ve **tutarlı tasarım**
+AI kod araçları için dört skill'lik bir set: Excel'de profesyonel **panolar**, **grafikler**, **tutarlı tasarım** ve
+**inşaat teklif / keşif belgeleri**
 üretir. Ortak bir Python kütüphanesi (`xlkit`) ve çalışan bir pano şablonu içerir. Her kural Microsoft
 Excel'de PDF'e alınıp görüntüden doğrulanmıştır.
 
-*A set of three agent skills (Claude Code, Codex, Gemini/Antigravity, OpenCode, Qoder, MLX-Serve) for building professional Excel dashboards, charts and styled workbooks
+*A set of four agent skills (Claude Code, Codex, Gemini/Antigravity, OpenCode, Qoder, MLX-Serve) for building professional Excel dashboards, charts, styled workbooks and construction offers / bills of quantities
 with openpyxl. Turkish-first documentation; every rule was verified by rendering in Microsoft Excel.*
 
 ![Örnek pano, kurumsal tema](docs/ornek-pano-kurumsal.png)
@@ -29,8 +30,9 @@ with openpyxl. Turkish-first documentation; every rule was verified by rendering
 | [`excel-design-system`](skills/excel-design-system/SKILL.md) | Tema, renk, yazı, tablo, KPI kartı, Türkçe sayı/tarih biçimi, baskı | Tasarım kuralları, tema tokenları, `xlkit.py` |
 | [`excel-charts`](skills/excel-charts/SKILL.md) | Grafik ekleme, seçme, renklendirme, etiket ve eksen biçimi, yerleşim | Grafik türü seçimi, tek tasarım kuralı, 14 ölçülmüş openpyxl tuzağı |
 | [`excel-dashboard`](skills/excel-dashboard/SKILL.md) | Yönetim paneli, KPI sayfası, filtreli özet | Izgara, KPI kartı, filtre, gezinme, çalışan şablon |
+| [`excel-insaat-belgeleri`](skills/excel-insaat-belgeleri/SKILL.md) | Teklif dosyası, keşif / birim fiyat teklif cetveli, icmal; villa, apartman, büyük proje | Kural ağırlıklı: sayfa yapısı, icmal zinciri, formül desenleri, denetim listesi; hazır şablon yok |
 
-Skill'ler birbirine dayanır: `excel-charts` ve `excel-dashboard`, `excel-design-system` içindeki
+Skill'ler birbirine dayanır: `excel-charts`, `excel-dashboard` ve `excel-insaat-belgeleri`, `excel-design-system` içindeki
 `xlkit.py` kütüphanesini kullanır.
 
 ## Gereksinimler
@@ -156,6 +158,9 @@ skills/
     SKILL.md
     references/  ornek-pano.png
     scripts/     ornek_pano.py
+  excel-insaat-belgeleri/
+    SKILL.md
+    references/  teklif-kesif.md
 tests/           pytest testleri
 kur.sh, kur.ps1  kurulum (macOS/Linux, Windows); kur.test.sh
 tools/           geliştirici betikleri (tema_gorseli.py)
@@ -188,6 +193,10 @@ docs/            README görselleri
 
 ## Sürüm notları
 
+- **2.0.0:** Dördüncü skill `excel-insaat-belgeleri`: özel sektör teklif dosyası ve keşif / birim fiyat teklif cetveli
+  için kurallar ve yapı rehberi (villa, apartman, büyük proje). Hazır şablon yerine kurallar: oranlar tanımlı adlı
+  girdi hücrelerinde, eklenen satırı kapsayan ara toplamlar, sabit icmal zinciri, hesaplatıp denetleme listesi.
+  Kamu ihalesi (EKAP) biçimi sonraki sürümde.
 - **1.2.0:** Dört yeni tema: `mimari`, `teknik`, `baski`, `sunum`. Tema alanları `yazi_olcegi`, `rakam_yazi`,
   `renksiz`; renksiz temada desenli ve kesikli grafikler, mürekkep durum biçimleri; `xk.antet()` bilgi bloğu;
   `tools/tema_gorseli.py` ile yedi tema görseli.

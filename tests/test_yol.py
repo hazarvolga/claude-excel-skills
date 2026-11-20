@@ -35,7 +35,7 @@ def _aciklama(skill: str) -> str:
 
 
 def test_aciklamalar_use_when():
-    for skill in ("excel-design-system", "excel-charts", "excel-dashboard"):
+    for skill in ("excel-design-system", "excel-charts", "excel-dashboard", "excel-insaat-belgeleri"):
         aciklama = _aciklama(skill)
         assert aciklama.startswith("Use when"), skill
         for sozcuk in ("xlkit", "Base layer", "Builds on", "Uses "):
@@ -67,3 +67,9 @@ def test_kardes_yoksa_acik_hata(skill_kopyasi, tmp_path):
     sonuc = _pano(kok, tmp_path / "p.xlsx")
     assert sonuc.returncode != 0
     assert "excel-design-system bulunamadı" in sonuc.stderr
+
+
+def test_skill_icindeki_baglantilar_var():
+    for skill_md in SKILLS.glob("*/SKILL.md"):
+        for hedef in re.findall(r"\]\(((?:references|scripts)/[^)]+)\)", skill_md.read_text(encoding="utf-8")):
+            assert (skill_md.parent / hedef).is_file(), f"{skill_md.parent.name}: {hedef}"
