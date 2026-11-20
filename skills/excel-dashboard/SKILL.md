@@ -1,8 +1,8 @@
 ---
 name: excel-dashboard
-description: "Use when building a dashboard, report cover, KPI panel or management summary sheet inside Excel: laying out KPI cards, charts and filters on a grid, wiring dropdown filters to formulas, adding navigation between sheets, or when the user says excel dashboard, excel pano, yönetim paneli, KPI kartı, rapor sayfası, özet sayfa, maliyet paneli, proje paneli."
+description: "Use when building a dashboard, report cover, KPI panel or management summary sheet inside Excel: laying out KPI cards, charts and filters on a grid, wiring dropdown filters to formulas, adding navigation between sheets, or when the user says excel dashboard, excel pano, yönetim paneli, KPI kartı, rapor sayfası, özet sayfa, maliyet paneli, proje paneli, proje portföy panosu."
 metadata:
-  version: "2.0.0"
+  version: "2.1.0"
   scope: global
 ---
 
@@ -19,6 +19,9 @@ değiştirin. Görüntüsü: [references/ornek-pano.png](references/ornek-pano.p
 ```bash
 uv run --no-project --with openpyxl --with pymupdf --with pillow python -I scripts/ornek_pano.py cikti.xlsx kurumsal --onizle onizleme
 ```
+
+Birden çok projeyi izleyen **portföy panosu** için veri yapısı, KPI ve grafikler:
+[references/portfoy-panosu.md](references/portfoy-panosu.md).
 
 ## 1. Önce soru, sonra yerleşim
 

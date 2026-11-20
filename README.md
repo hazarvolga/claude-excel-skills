@@ -30,7 +30,7 @@ with openpyxl. Turkish-first documentation; every rule was verified by rendering
 | [`excel-design-system`](skills/excel-design-system/SKILL.md) | Tema, renk, yazı, tablo, KPI kartı, Türkçe sayı/tarih biçimi, baskı | Tasarım kuralları, tema tokenları, `xlkit.py` |
 | [`excel-charts`](skills/excel-charts/SKILL.md) | Grafik ekleme, seçme, renklendirme, etiket ve eksen biçimi, yerleşim | Grafik türü seçimi, tek tasarım kuralı, 14 ölçülmüş openpyxl tuzağı |
 | [`excel-dashboard`](skills/excel-dashboard/SKILL.md) | Yönetim paneli, KPI sayfası, filtreli özet | Izgara, KPI kartı, filtre, gezinme, çalışan şablon |
-| [`excel-insaat-belgeleri`](skills/excel-insaat-belgeleri/SKILL.md) | Teklif dosyası, keşif / birim fiyat teklif cetveli, icmal; villa, apartman, büyük proje | Kural ağırlıklı: sayfa yapısı, icmal zinciri, formül desenleri, denetim listesi; hazır şablon yok |
+| [`excel-insaat-belgeleri`](skills/excel-insaat-belgeleri/SKILL.md) | Teklif dosyası, keşif / birim fiyat teklif cetveli, icmal, metraj cetveli, şantiye günlük raporu, puantaj, malzeme takip | Kural ağırlıklı: sayfa yapısı, formül desenleri, denetim listesi; hazır şablon yok |
 
 Skill'ler birbirine dayanır: `excel-charts`, `excel-dashboard` ve `excel-insaat-belgeleri`, `excel-design-system` içindeki
 `xlkit.py` kütüphanesini kullanır.
@@ -156,11 +156,11 @@ skills/
     references/  openpyxl-grafik-tuzaklari.md
   excel-dashboard/
     SKILL.md
-    references/  ornek-pano.png
+    references/  ornek-pano.png, portfoy-panosu.md
     scripts/     ornek_pano.py
   excel-insaat-belgeleri/
     SKILL.md
-    references/  teklif-kesif.md
+    references/  teklif-kesif.md, metraj-cetveli.md, santiye-takip.md
 tests/           pytest testleri
 kur.sh, kur.ps1  kurulum (macOS/Linux, Windows); kur.test.sh
 tools/           geliştirici betikleri (tema_gorseli.py)
@@ -193,6 +193,8 @@ docs/            README görselleri
 
 ## Sürüm notları
 
+- **2.1.0:** `excel-insaat-belgeleri` metraj cetveli (ölçü satırı, minha, keşfe bağlama) ve şantiye takip
+  (günlük rapor, aylık puantaj, malzeme takip) rehberleri; `excel-dashboard` proje portföy panosu rehberi.
 - **2.0.0:** Dördüncü skill `excel-insaat-belgeleri`: özel sektör teklif dosyası ve keşif / birim fiyat teklif cetveli
   için kurallar ve yapı rehberi (villa, apartman, büyük proje). Hazır şablon yerine kurallar: oranlar tanımlı adlı
   girdi hücrelerinde, eklenen satırı kapsayan ara toplamlar, sabit icmal zinciri, hesaplatıp denetleme listesi.

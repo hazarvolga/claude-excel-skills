@@ -1,12 +1,12 @@
 ---
 name: excel-insaat-belgeleri
-description: "Use when preparing a construction offer or bill of quantities in Excel: teklif dosyası, keşif cetveli, birim fiyat teklif cetveli, icmal, teklif mektubu, villa / apartman / büyük proje teklifi, ihale teklif şablonu (özel sektör)."
+description: "Use when preparing construction documents in Excel: teklif dosyası, keşif cetveli, birim fiyat teklif cetveli, icmal, teklif mektubu, villa / apartman / büyük proje teklifi, ihale teklif şablonu (özel sektör), metraj cetveli, ölçü ve minha satırları, şantiye günlük raporu, puantaj, malzeme takip tablosu."
 metadata:
-  version: "2.0.0"
+  version: "2.1.0"
   scope: global
 ---
 
-# İnşaat teklif ve keşif belgeleri (Excel)
+# İnşaat belgeleri (Excel)
 
 Bu skill müşteriye giden **teklif dosyasını** ve **keşif / birim fiyat teklif cetvelini** Excel'de kurmayı anlatır.
 Hazır şablon yoktur: kitabı her istekte kullanıcının verisiyle, aşağıdaki kurallara göre kendin kurarsın.
@@ -14,13 +14,23 @@ Görsel dil için `excel-design-system` skill'indeki `xlkit.py` kütüphanesini 
 girdi hücresi, baskı, önizleme); önce o skill'i oku. Sayfa sayfa yapı, sütunlar ve formül desenleri:
 [references/teklif-kesif.md](references/teklif-kesif.md).
 
-Kapsam dışı: kamu ihalesi (EKAP) resmî birim fiyat teklif cetveli biçimi, hakediş, metraj cetveli.
+Diğer belgelerin yapı rehberleri (aynı değişmez kurallar geçerli):
+
+| Belge | Rehber |
+|---|---|
+| Metraj cetveli (ölçü satırları, minha, keşfe bağlama) | [references/metraj-cetveli.md](references/metraj-cetveli.md) |
+| Şantiye günlük raporu, aylık puantaj, malzeme takip | [references/santiye-takip.md](references/santiye-takip.md) |
+| Proje portföy panosu | `excel-dashboard` skill'i, `references/portfoy-panosu.md` |
+
+Kapsam dışı: kamu ihalesi (EKAP) resmî birim fiyat teklif cetveli biçimi, hakediş, donatı (demir) metrajı, Azı /
+Çoğu sütunlu klasik metraj biçimi, boşluk düşüm eşikleri (kullanıcının kuralı uygulanır).
 
 ## 1. Önce sor (bilmiyorsan)
 
 Tek mesajda, en fazla şu dört şey:
 
-1. **Belge:** yalnız keşif cetveli mi, tam teklif dosyası mı (kapak + mektup + icmal + keşif + koşullar)?
+1. **Belge:** yalnız keşif cetveli mi, tam teklif dosyası mı (kapak + mektup + icmal + keşif + koşullar)? Ya da
+   metraj cetveli, şantiye takip tablosu mu (ilgili rehberi oku)?
 2. **Ölçek:** villa (tek seviye iş grubu), apartman (blok bazında miktar), büyük proje (bölüm > iş grubu > kalem)?
 3. **Veri:** kalemler, miktarlar ve birim fiyatlar nereden gelecek: kullanıcının listesi, kendi Excel'i, yoksa boş şablon mu?
 4. **Tema:** belirtilmediyse müşteriye giden belgede `mimari`, keşif ağırlıklı çalışmada `teknik`, renksiz yazıcı için `baski`.
