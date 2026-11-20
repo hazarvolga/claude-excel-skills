@@ -51,6 +51,7 @@ değildir. Örnek pano, kurumsal tema, LibreOffice 26.8 (Kasım 2026) ile Excel 
 | Yatay çubuk lejant sırası | Ters (Harcanan, Bütçe) | Bütçe, Harcanan |
 | Sıfır ekseni | `-0,0%` | `0,0%` |
 | Sayfa üst / alt bilgisi | Görünmüyor | Görünür |
+| Desen dolgusu (`baski` teması) | Desenler daha ince ve seyrek çizilir; seriler yine ayrışır | Sık tarama |
 
 Bu farklar LibreOffice önizlemesinde hata sayılmaz; taşma, kırpılma, üst üste binme, `####` ve yanlış sayı
 yine hatadır. LibreOffice ile denetlenen dosyada sonuç raporuna "Excel'de grafik görünümü küçük farklar

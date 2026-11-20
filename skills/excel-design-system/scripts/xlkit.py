@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import sys
 from dataclasses import dataclass, field, replace
 
@@ -24,6 +25,7 @@ from openpyxl.chart.marker import DataPoint
 from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.chart.text import RichText, Text
 from openpyxl.chart.title import Title
+from openpyxl.drawing.fill import ColorChoice, PatternFillProperties
 from openpyxl.drawing.line import LineProperties
 from openpyxl.drawing.spreadsheet_drawing import AnchorMarker, TwoCellAnchor
 from openpyxl.drawing.text import CharacterProperties, Paragraph, ParagraphProperties, RegularTextRun
@@ -139,6 +141,26 @@ def etiket_bicimi(anahtar: str) -> str:
     return temel if ";" in temel else f"{temel};-{temel};;"
 
 
+# ---------------------------------------------------------------- renksiz baskı (baski teması)
+
+DESENLER = ("solid", "ltUpDiag", "dkDnDiag", "smGrid", "pct50", "dashHorz")  # seri/dilim sırası; solid = düz mürekkep
+KESIKLER = ("solid", "dash", "sysDot", "lgDash", "dashDot")                   # çizgi serisi sırası
+
+
+def _renksiz_bicim(kod: str) -> str:
+    """Sayı biçiminden renk belirteçlerini ([Color10], [Red] ...) siler; ▲ ▼ simgeleri kalır."""
+    return re.sub(r"\[(?:Color\d+|Red|Green|Blue|Black|White|Yellow|Magenta|Cyan)\]", "", kod)
+
+
+def _desenli(t: Tema, i: int, kenar: LineProperties) -> GraphicalProperties:
+    """Renksiz temada i. seri ya da dilim dolgusu: düz mürekkep ya da mürekkep-kâğıt tarama deseni."""
+    desen = DESENLER[i % len(DESENLER)]
+    if desen == "solid":
+        return GraphicalProperties(solidFill=t.murekkep, ln=kenar)
+    return GraphicalProperties(pattFill=PatternFillProperties(prst=desen, fgClr=ColorChoice(srgbClr=t.murekkep),
+                                                              bgClr=ColorChoice(srgbClr=t.kagit)), ln=kenar)
+
+
 # ---------------------------------------------------------------- hücre stilleri
 
 
@@ -241,8 +263,13 @@ def acilir_liste(ws, alan: str, kaynak: str, baslik="Seçin", mesaj=""):
 
 def durum_renkleri(ws, t: Tema, alan: str, iyi: str, uyari: str, kotu: str):
     """Formül tabanlı trafik ışığı. Formüller alanın sol üst hücresine göre yazılır, örn. iyi="$F5>=0.95"."""
-    for formul, renk in ((iyi, t.iyi), (uyari, t.uyari), (kotu, t.kotu)):
-        ws.conditional_formatting.add(alan, FormulaRule(formula=[formul], font=Font(color=renk, b=True)))
+    if t.renksiz:  # anlam renkle değil yazı biçimiyle: iyi normal, uyarı italik, kötü kalın + altı çizili
+        kurallar = ((iyi, Font(color=t.murekkep)), (uyari, Font(color=t.murekkep, i=True)),
+                    (kotu, Font(color=t.murekkep, b=True, u="single")))
+    else:
+        kurallar = tuple((f, Font(color=r, b=True)) for f, r in ((iyi, t.iyi), (uyari, t.uyari), (kotu, t.kotu)))
+    for formul, yazi_bicimi in kurallar:
+        ws.conditional_formatting.add(alan, FormulaRule(formula=[formul], font=yazi_bicimi))
 
 
 def veri_cubugu(ws, t: Tema, alan: str):
@@ -251,7 +278,8 @@ def veri_cubugu(ws, t: Tema, alan: str):
 
 
 def negatif_kirmizi(ws, t: Tema, alan: str):
-    ws.conditional_formatting.add(alan, CellIsRule(operator="lessThan", formula=["0"], font=Font(color=t.kotu)))
+    yazi_bicimi = Font(color=t.murekkep, b=True) if t.renksiz else Font(color=t.kotu)
+    ws.conditional_formatting.add(alan, CellIsRule(operator="lessThan", formula=["0"], font=yazi_bicimi))
 
 
 # ---------------------------------------------------------------- KPI kartı
@@ -288,7 +316,8 @@ def kpi_karti(ws, t: Tema, sol_ust: str, sutun: int, etiket: str, formul: str, b
     a.font = yazi(t, 9, renk=t.ara)
     a.alignment = Alignment(horizontal="left", indent=1, vertical="top")
     if alt_formul:
-        a.number_format = BICIM.get(alt_bicim, alt_bicim)
+        kod = BICIM.get(alt_bicim, alt_bicim)
+        a.number_format = _renksiz_bicim(kod) if t.renksiz else kod
     ws.row_dimensions[r1].height = _olcek(t, 20)
     ws.row_dimensions[r1 + 1].height = _olcek(t, 36)
     ws.row_dimensions[r1 + 2].height = _olcek(t, 18)
@@ -363,18 +392,27 @@ def grafik_stili(chart, t: Tema, baslik: str, deger: str = "sayi", etiket: bool 
             chart.x_axis.numFmt = NumFmt(formatCode=BICIM[anahtar], sourceLinked=False)
     yigin = getattr(chart, "grouping", None) in ("stacked", "percentStacked")
     for i, seri in enumerate(chart.series):
-        renk = t.seriler[i % len(t.seriler)]
+        renk = t.murekkep if t.renksiz else t.seriler[i % len(t.seriler)]
         if tur in ("LineChart", "AreaChart", "ScatterChart"):
-            seri.graphicalProperties = GraphicalProperties(ln=LineProperties(solidFill=renk, w=25400))
+            cizgi = LineProperties(solidFill=renk, w=25400)
+            if t.renksiz:
+                cizgi.prstDash = KESIKLER[i % len(KESIKLER)]
+            seri.graphicalProperties = GraphicalProperties(ln=cizgi)
             if tur == "AreaChart":
-                seri.graphicalProperties.solidFill = renk
+                if t.renksiz:
+                    seri.graphicalProperties = _desenli(t, i, cizgi)
+                else:
+                    seri.graphicalProperties.solidFill = renk
             seri.smooth = False
             if etiket and tur == "LineChart" and len(chart.series) == 1:
                 seri.dLbls = DataLabelList(showVal=True, showSerName=False, showCatName=False, showLegendKey=False,
                                            numFmt=etiket_kodu, dLblPos="t")
                 seri.dLbls.txPr = _metin(t, 800, t.murekkep)
         elif tur == "BarChart":
-            seri.graphicalProperties = GraphicalProperties(solidFill=renk, ln=LineProperties(noFill=True))
+            if t.renksiz:
+                seri.graphicalProperties = _desenli(t, i, LineProperties(solidFill=t.murekkep, w=6350))
+            else:
+                seri.graphicalProperties = GraphicalProperties(solidFill=renk, ln=LineProperties(noFill=True))
             seri.invertIfNegative = False              # negatif çubuk beyaza dönmesin
             if etiket:
                 koyu = _koyu_mu(renk)
@@ -384,8 +422,9 @@ def grafik_stili(chart, t: Tema, baslik: str, deger: str = "sayi", etiket: bool 
         elif pasta:
             for j in range(12):
                 n = DataPoint(idx=j)
-                n.graphicalProperties = GraphicalProperties(solidFill=t.seriler[j % len(t.seriler)],
-                                                            ln=LineProperties(solidFill=t.kagit, w=12700))
+                kenar = LineProperties(solidFill=t.kagit, w=12700)
+                n.graphicalProperties = (_desenli(t, j, kenar) if t.renksiz else
+                                         GraphicalProperties(solidFill=t.seriler[j % len(t.seriler)], ln=kenar))
                 seri.dPt.append(n)
     if tur == "BarChart":
         chart.gapWidth = 60
@@ -400,9 +439,15 @@ def grafik_stili(chart, t: Tema, baslik: str, deger: str = "sayi", etiket: bool 
         for seri in chart.series:
             etiketler = []
             for j in range(12):
-                renk = t.seriler[j % len(t.seriler)]
-                yazi_rengi = "FFFFFF" if _koyu_mu(renk) else "1B1F23"
-                etiketler.append(DataLabel(idx=j, txPr=_metin(t, 900, yazi_rengi, True), **ortak))
+                if t.renksiz:  # düz mürekkep dilimde kâğıt rengi, desenli dilimde mürekkep
+                    yazi_rengi = t.kagit if DESENLER[j % len(DESENLER)] == "solid" else t.murekkep
+                else:
+                    renk = t.seriler[j % len(t.seriler)]
+                    yazi_rengi = "FFFFFF" if _koyu_mu(renk) else "1B1F23"
+                zemin = None
+                if t.renksiz and DESENLER[j % len(DESENLER)] != "solid":  # desen üstünde etiket okunsun
+                    zemin = GraphicalProperties(solidFill=t.kagit, ln=LineProperties(noFill=True))
+                etiketler.append(DataLabel(idx=j, txPr=_metin(t, 900, yazi_rengi, True), spPr=zemin, **ortak))
             seri.dLbls = DataLabelList(dLbl=etiketler, **ortak)
     return chart
 

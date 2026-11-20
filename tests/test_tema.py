@@ -114,3 +114,79 @@ def test_sunum_eksen_etiketi_olceklenmez():
     xk.grafik_stili(ch, xk.tema("sunum"), "Başlık")
     assert ch.x_axis.txPr.p[0].pPr.defRPr.sz == 900
     assert ch.legend.txPr.p[0].pPr.defRPr.sz == 1170
+
+
+# ---------------------------------------------------------------- renksiz baskı
+
+from openpyxl.chart import DoughnutChart, LineChart  # noqa: E402
+
+
+def _renk(dolgu) -> str | None:
+    """openpyxl solidFill'i bellekte bazen düz metin, bazen ColorChoice tutar."""
+    if dolgu is None or isinstance(dolgu, str):
+        return dolgu
+    rgb = dolgu.srgbClr
+    return rgb if isinstance(rgb, str) or rgb is None else rgb.val
+
+
+def _grafik(tur, t, seri_sayisi=2, satir=3):
+    ws = Workbook().active
+    for i in range(1, satir + 1):
+        ws.append([f"k{i}"] + [i * (j + 1) for j in range(seri_sayisi)])
+    ch = tur()
+    ch.add_data(Reference(ws, min_col=2, max_col=1 + seri_sayisi, min_row=1, max_row=satir))
+    xk.grafik_stili(ch, t, "Başlık")
+    return ch
+
+
+def test_renksiz_cubuk_desenli():
+    ch = _grafik(BarChart, xk.tema("baski"))
+    s0, s1 = (s.graphicalProperties for s in ch.series)
+    assert _renk(s0.solidFill) == "000000"
+    assert s1.pattFill.prst == "ltUpDiag"
+    assert s1.solidFill is None
+
+
+def test_renksiz_cizgi_kesikli():
+    ch = _grafik(LineChart, xk.tema("baski"))
+    s0, s1 = (s.graphicalProperties.ln for s in ch.series)
+    assert s1.prstDash == "dash"
+    assert _renk(s0.solidFill) == _renk(s1.solidFill) == "000000"
+
+
+def test_renksiz_yedi_dilim_doner():
+    ch = _grafik(DoughnutChart, xk.tema("baski"), seri_sayisi=1, satir=7)
+    dilimler = ch.series[0].dPt
+    assert _renk(dilimler[6].graphicalProperties.solidFill) == "000000"   # DESENLER[0] düz mürekkep
+    assert dilimler[1].graphicalProperties.pattFill.prst == xk.DESENLER[1]
+
+
+def test_renksiz_ozel_vurgu():
+    ch = _grafik(BarChart, xk.tema("baski", vurgu="C8102E"))
+    assert _renk(ch.series[0].graphicalProperties.solidFill) == "000000"
+
+
+def test_renksiz_kpi_alt_bicim_renksiz():
+    ws = Workbook().active
+    xk.kpi_karti(ws, xk.tema("baski"), "B2", 4, "Ciro", "=1", "sayi", alt_formul="=0.05")
+    kod = ws["B4"].number_format
+    assert "[Color" not in kod and "[Red]" not in kod and "▲" in kod
+
+
+def _durum_font_renkleri(ad):
+    ws = Workbook().active
+    xk.durum_renkleri(ws, xk.tema(ad), "B2:B5", "$B2>1", "$B2>0", "$B2<0")
+    return [k.dxf.font.color.rgb[-6:] for k in ws.conditional_formatting["B2:B5"]]
+
+
+def test_renksiz_durum_murekkep():
+    assert set(_durum_font_renkleri("baski")) == {"000000"}
+    assert _durum_font_renkleri("kurumsal")[0] == "2E7D32"
+
+
+def test_renksiz_desenli_dilim_etiketi_zeminli():
+    # Görsel denetim: sık desen üstündeki yüzde etiketi okunmuyordu
+    ch = _grafik(DoughnutChart, xk.tema("baski"), seri_sayisi=1, satir=5)
+    etiketler = ch.series[0].dLbls.dLbl
+    assert _renk(etiketler[1].spPr.solidFill) == "FFFFFF"
+    assert etiketler[0].spPr is None
