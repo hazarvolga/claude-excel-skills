@@ -138,10 +138,14 @@ def test_libreoffice_gercek_hesaplama_turkce_yol(tmp_path):
     assert pdf.stat().st_size > 0
 
 
+# Excel sandbox'ı her yeni klasör için izin ister; tmp_path her koşuda yeni klasör açar. Sabit klasör bir kez onaylanır.
+EXCEL_TEST_KLASORU = Path.home() / ".cache" / "xlkit-excel-test"
+
+
 @pytest.mark.skipif("excel-mac" not in motor.bulunan_motorlar(), reason="macOS Excel yok")
-def test_excel_mac_onizle_turkce_yol(tmp_path):
-    x = _kitap(tmp_path / TURKCE)
-    assert len(xk.onizle(str(x), str(tmp_path / "on"), motor="excel-mac")) >= 1
+def test_excel_mac_onizle_turkce_yol():
+    x = _kitap(EXCEL_TEST_KLASORU / TURKCE)
+    assert len(xk.onizle(str(x), str(EXCEL_TEST_KLASORU / "on"), motor="excel-mac")) >= 1
 
 
 # ---------------------------------------------------------------- son inceleme düzeltmeleri

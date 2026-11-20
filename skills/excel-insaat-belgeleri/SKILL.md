@@ -1,8 +1,8 @@
 ---
 name: excel-insaat-belgeleri
-description: "Use when preparing construction documents in Excel: teklif dosyası, keşif cetveli, birim fiyat teklif cetveli, icmal, teklif mektubu, villa / apartman / büyük proje teklifi, ihale teklif şablonu (özel sektör), metraj cetveli, ölçü ve minha satırları, şantiye günlük raporu, puantaj, malzeme takip tablosu."
+description: "Use when preparing construction documents in Excel: teklif dosyası, keşif cetveli, birim fiyat teklif cetveli, icmal, teklif mektubu, villa / apartman / büyük proje teklifi, ihale teklif şablonu, kamu ihalesi birim fiyat teklif cetveli (KİK012, EKAP), metraj cetveli, ölçü ve minha satırları, şantiye günlük raporu, puantaj, malzeme takip tablosu."
 metadata:
-  version: "2.1.0"
+  version: "2.2.0"
   scope: global
 ---
 
@@ -20,9 +20,10 @@ Diğer belgelerin yapı rehberleri (aynı değişmez kurallar geçerli):
 |---|---|
 | Metraj cetveli (ölçü satırları, minha, keşfe bağlama) | [references/metraj-cetveli.md](references/metraj-cetveli.md) |
 | Şantiye günlük raporu, aylık puantaj, malzeme takip | [references/santiye-takip.md](references/santiye-takip.md) |
+| Kamu ihalesi birim fiyat teklif cetveli (KİK012) ve hazırlık kitabı, EKAP | [references/kamu-ekap.md](references/kamu-ekap.md) |
 | Proje portföy panosu | `excel-dashboard` skill'i, `references/portfoy-panosu.md` |
 
-Kapsam dışı: kamu ihalesi (EKAP) resmî birim fiyat teklif cetveli biçimi, hakediş, donatı (demir) metrajı, Azı /
+Kapsam dışı: teklif mektubu e-formu (EKAP'ta doldurulur), aşırı düşük sınır değer, hakediş, donatı (demir) metrajı, Azı /
 Çoğu sütunlu klasik metraj biçimi, boşluk düşüm eşikleri (kullanıcının kuralı uygulanır).
 
 ## 1. Önce sor (bilmiyorsan)
@@ -80,6 +81,11 @@ Tek mesajda, en fazla şu dört şey:
 7. Kaydet, hesaplat, denetle (aşağıdaki liste), önizle.
 
 ## 4. Bitti sayılmadan önce
+
+Kamu ihalesi cetvelinde ayrıca **denetim betiği geçmeden bitti deme**: hesaplatılmış kopyada
+`python3 scripts/kik012_denetim.py CETVEL.xlsx --idare IDARE.json --bf-hane 2` çıkış kodu 0 ve "UYGUN" vermeli
+(idarenin A grubunu JSON'a sen yaz: `[[sıra, iş kalemi no, ad, birim, miktar], ...]`). HATA satırlarını düzelt,
+yeniden çalıştır.
 
 - [ ] Kitap `xk.excel_ile_kaydet()` ile hesaplatıldı (Excel yoksa bir kopyada `motor="libreoffice"`) ve
       hesaplanmış değerlerde **hata hücresi yok**.

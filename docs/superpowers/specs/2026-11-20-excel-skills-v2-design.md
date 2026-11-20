@@ -215,7 +215,10 @@ Sürüm 2.0.0 (yeni skill ve kurulum değişikliği). Her faz ayrı commit dizis
 2. **Faz 2 · Temalar:** dört tema, `antet()`, örnek panonun yedi temadaki görüntüsü.
 3. **Faz 3 · Özel sektör belgeleri:** `excel-insaat-belgeleri` kural ağırlıklı (3a: teklif dosyası ve keşif;
    3b: metraj, portföy panosu, şantiye takip), üç ölçek.
-4. **Faz 4 · Kamu formatı:** ayrı tasarım belgesiyle.
+4. **Faz 4 · Kamu formatı:** (2026-11-20) kaynak taraması (KİK e-formları, Tebliğ 16.5 / 39, Yönetmelik md. 54, 57)
+   sonrası kullanıcı "hazırlık + basılı cetvel" seçti. Kural ağırlıklı rehber `references/kamu-ekap.md` ve
+   kurulmuş cetveli denetleyen `scripts/kik012_denetim.py` (şablon değil, denetim). Teklif mektubu EKAP e-formunda
+   kalır. Doğrulanamayan: yeni EKAP'ta yapım e-teklifinde Excel içe/dışa aktarma ve azami hane.
 
 README, kurulum ve "Bilinen sınırlar" her fazda güncellenir. Push ve GitHub işlemleri kullanıcı onayıyla.
 

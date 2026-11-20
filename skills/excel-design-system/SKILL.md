@@ -2,7 +2,7 @@
 name: excel-design-system
 description: "Use when an Excel workbook (.xlsx) must look professional: applying a theme or brand colors, typography, table and header styling, KPI cards, conditional formatting, Turkish number/date/currency formats, print layout, or when the user says excel tasarımı, profesyonel excel, şık tablo, kurumsal rapor, excel teması, renk paleti, biçimlendirme."
 metadata:
-  version: "2.1.0"
+  version: "2.2.0"
   scope: global
 ---
 
