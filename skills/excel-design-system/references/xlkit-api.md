@@ -8,6 +8,7 @@
 |---|---|
 | `tema(ad, **degisiklik)` | Hazır tema (`kurumsal`, `minimal`, `gece`, `mimari`, `teknik`, `baski`, `sunum`); `vurgu=` verilirse seri listesi de güncellenir |
 | `yazi(t, boyut, kalin, renk, baslik, italik, rakam)` | Tema yazısı; boyut `yazi_olcegi` ile çarpılır, `rakam=True` temanın rakam yazısını seçer |
+| `buyuk_harf(metin)` | Türkçe büyük harf (i → İ, ı → I); KPI ve antet etiketleri bunu kullanır |
 | `DESENLER`, `KESIKLER` | Renksiz temada seri/dilim desen ve çizgi kesik sırası |
 | `BICIM[anahtar]` | Sayı/tarih biçim kodu sözlüğü |
 | `etiket_bicimi(anahtar)` | Sıfırı gizleyen üç bölümlü kod (grafik verisi hücreleri için) |

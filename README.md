@@ -197,6 +197,7 @@ docs/            README görselleri
   için kurallar ve yapı rehberi (villa, apartman, büyük proje). Hazır şablon yerine kurallar: oranlar tanımlı adlı
   girdi hücrelerinde, eklenen satırı kapsayan ara toplamlar, sabit icmal zinciri, hesaplatıp denetleme listesi.
   Kamu ihalesi (EKAP) biçimi sonraki sürümde.
+  `xk.buyuk_harf()`: KPI ve antet etiketleri Türkçe büyük harfle (`TEKLİF NO`; önceden `TEKLIF NO`).
 - **1.2.0:** Dört yeni tema: `mimari`, `teknik`, `baski`, `sunum`. Tema alanları `yazi_olcegi`, `rakam_yazi`,
   `renksiz`; renksiz temada desenli ve kesikli grafikler, mürekkep durum biçimleri; `xk.antet()` bilgi bloğu;
   `tools/tema_gorseli.py` ile yedi tema görseli.

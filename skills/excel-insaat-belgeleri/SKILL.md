@@ -48,6 +48,7 @@ Tek mesajda, en fazla şu dört şey:
 7. **Hata hücresi yok.** Bölme içeren formüller (m² başına maliyet gibi) `IFERROR(…,0)` ile korunur; boş şablon
    hesaplandığında da hata çıkmaz.
 8. **Formül dili İngilizce** (`SUBTOTAL`, `SUMPRODUCT`, `IF`); Excel Türkçe arayüzde kendisi çevirir.
+   Büyük harf etiketlerde Python `str.upper()` yerine `xk.buyuk_harf()` kullan (`TEKLİF NO`, `TEKLIF NO` değil).
 9. Mühendislik ve maliyet sayıları (miktar, birim fiyat, oran) kullanıcıdan ya da kaynağından gelir; değiştirme,
    yuvarlama, "düzeltme" yapma. Şüpheli bir değer görürsen kullanıcıya sor.
 

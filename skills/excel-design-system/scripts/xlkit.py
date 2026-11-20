@@ -164,6 +164,11 @@ def _desenli(t: Tema, i: int, kenar: LineProperties) -> GraphicalProperties:
 # ---------------------------------------------------------------- hücre stilleri
 
 
+def buyuk_harf(metin: str) -> str:
+    """Türkçe büyük harf: i → İ, ı → I (Python'un str.upper() 'i'yi 'I' yapar, 'Teklif' → 'TEKLIF')."""
+    return metin.replace("i", "İ").replace("ı", "I").upper()
+
+
 def ince(renk: str) -> Side:
     return Side(style="thin", color=renk)
 
@@ -305,7 +310,7 @@ def kpi_karti(ws, t: Tema, sol_ust: str, sutun: int, etiket: str, formul: str, b
             c.border = Border(left=Side(style="thick", color=t.vurgu) if col == c1 else None,
                               right=kenar if col == c2 else None,
                               top=kenar if r == r1 else None, bottom=kenar if r == r1 + 2 else None)
-    e = ws.cell(r1, c1, etiket.upper())
+    e = ws.cell(r1, c1, buyuk_harf(etiket))
     e.font = yazi(t, 9, kalin=True, renk=t.ara)
     e.alignment = Alignment(indent=1, vertical="bottom")
     d = ws.cell(r1 + 1, c1, formul)
@@ -565,7 +570,7 @@ def antet(ws, t: Tema, alan: str, alanlar: list[tuple[str, str]]):
             ws.merge_cells(f"{h1}{r1}:{h2}{r1}")
         if genislik > 1 or r2 > r1 + 1:  # tek hücre birleştirmesi Excel'de onarım uyarısı verir
             ws.merge_cells(f"{h1}{r1 + 1}:{h2}{r2}")
-        e = ws.cell(r1, g1, etiket.upper())
+        e = ws.cell(r1, g1, buyuk_harf(etiket))
         e.font = yazi(t, 8, renk=t.ara)
         e.alignment = Alignment(indent=1, vertical="bottom")
         d = ws.cell(r1 + 1, g1, deger)

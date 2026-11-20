@@ -255,3 +255,14 @@ def test_antet_tek_hucre_birlestirmez():
     xk.antet(ws, xk.tema("teknik"), "Q2:T3", ALANLAR)
     assert all(":" in str(r) for r in ws.merged_cells.ranges)
     assert ws["R3"].value == "PNO-001"
+
+
+def test_turkce_buyuk_harf():
+    assert xk.buyuk_harf("Teklif tarihi") == "TEKLİF TARİHİ"
+    assert xk.buyuk_harf("Bütçe kullanımı") == "BÜTÇE KULLANIMI"
+    ws = Workbook().active
+    xk.antet(ws, xk.tema("teknik"), "B2:C3", [("Teklif no", "T-1")])
+    assert ws["B2"].value == "TEKLİF NO"
+    ws = Workbook().active
+    xk.kpi_karti(ws, xk.tema("kurumsal"), "B2", 4, "Bitiş tarihi", "=1")
+    assert ws["B2"].value == "BİTİŞ TARİHİ"

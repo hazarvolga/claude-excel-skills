@@ -30,6 +30,13 @@ def ad_ekle(wb, ad, hedef):                    # hedef: "$C$16" ya da "$E$30:$E$
     wb.defined_names[ad] = DefinedName(ad, attr_text=f"'Parametreler'!{hedef}")
 
 xk.girdi_hucresi(ws, t, "C16:C16")              # tek hücre de aralık biçiminde verilir
+```
+
+Boş bırakılabilen tarih başka sayfada `=TEKLIF_TARIHI` ile gösterilirse `00.01.1900` görünür; sarmala:
+`=IF(TEKLIF_TARIHI="","",TEKLIF_TARIHI)`. Aynı şey sayı olmayan her boş parametre için geçerlidir
+(`=IF(PROJE_YERI="","",PROJE_YERI)`).
+
+```python
 xk.acilir_liste(ws, "C18", '"Evet,Hayır"', "Genel gider ve kâr", "Evet: icmalde ayrı satır")
 ```
 
@@ -69,6 +76,8 @@ Miktar (blok sütunları) ve birim fiyat girdi hücresidir; Tutar formüldür. S
 ### Apartman farkları
 
 - `Toplam miktar = SUM(E8:G8)` (blok sütunları), `Tutar = Toplam miktar × Birim fiyat`.
+- Genel toplam satırında blok tutarları aynı `SUMPRODUCT` ile tüm aralığa uygulanabilir: ara toplam satırlarında
+  birim fiyat boş olduğu için çift sayılmaz.
 - Ara toplam satırında **her blok sütununa** o grubun blok tutarı:
   `=SUMPRODUCT(E7:INDEX(E:E,ROW()-1),$I7:INDEX($I:$I,ROW()-1))` (E = Blok A, I = Birim fiyat). Başlık satırının
   boş ya da metin hücreleri SUMPRODUCT'ta 0 sayılır. Bu hücrelere `tl2` biçimi ver; miktar sütununda tutar
@@ -99,14 +108,17 @@ başvurur (`='Keşif'!G10`); büyük projede bölüm satırları da.
 | **Genel toplam** | `=C21+C22` (kalın, `t.yuzey` zemin, büyük yazı) |
 | m² başına maliyet (yalnız apartman, KDV hariç) | `=IFERROR(C21/SUMPRODUCT(DAIRE_ADET,DAIRE_BRUT),0)` |
 
-Apartmanda iş grubu satırlarında blok sütunları keşifteki ara toplam satırının blok hücrelerine başvurur; blok
-sütunlarının toplamı tutar sütunuyla aynı olmalıdır (denetimde karşılaştır).
+Apartman icmali sütunları: **Kalem · Oran · Blok A · Blok B · … · Toplam**. Oran sütunu yalnız GGK, iskonto ve KDV
+satırlarında tanımlı adı gösterir (`=GGK_ORANI`); zincir her blok sütununda ve Toplam'da aynı formüllerle kurulur.
+İş grubu satırlarında blok sütunları keşifteki ara toplam satırının blok hücrelerine başvurur; blok sütunlarının
+toplamı Toplam sütunuyla aynı olmalıdır (denetimde karşılaştır).
 
 ## Kapak (tam teklif dosyası)
 
 A4 dikey, tek sayfa (`xk.baski(ws, t, yatay=False, tek_sayfa=True)`). Üstte firma (`=FIRMA`), ortada büyük başlık
 "Fiyat Teklifi", proje (`=PROJE`), müşteri (`=MUSTERI`); altta `xk.antet` ile Teklif no, Rev., Tarih
-(`=TEKLIF_NO`, `=REVIZYON`, `=TEKLIF_TARIHI` + `tarih` biçimi).
+(`=TEKLIF_NO`, `=REVIZYON`, `=IF(TEKLIF_TARIHI="","",TEKLIF_TARIHI)`). `xk.antet` değeri grubun **sol üst**
+hücresine yazar; tarih biçimini (`xk.BICIM["tarih"]`) o hücreye ver.
 
 ## Teklif Mektubu
 
@@ -118,6 +130,10 @@ A4 dikey, tek sayfa (`xk.baski(ws, t, yatay=False, tek_sayfa=True)`). Üstte fir
 - İmza: `=FIRMA`, altında ad soyad ve unvan için boş girdi hücreleri.
 
 ## Koşullar
+
+Düzen: B sütununda madde numarası, C:H birleşik metin (`wrap_text`), boş parametre için
+`=IF(ODEME_KOSULU="","Henüz belirtilmedi; Parametreler sayfasından girin.",ODEME_KOSULU)`. En altta iki imza kutusu
+(Teklif veren · İşveren onayı), her biri ad soyad, unvan, tarih, imza satırlı ince kenarlı blok.
 
 Numaralı maddeler: ödeme (`=ODEME_KOSULU`), teslim (`=TESLIM_SURESI`), geçerlilik, teminat ("Teminatın oranı ve
 şekli sözleşmede belirlenir."), fiyat farkı, teklife dahil olmayan işler (girdi hücreleri), imza alanı. Oran veya
@@ -139,3 +155,14 @@ hatalar = [f"{ws.title}!{c.coordinate}" for ws in hesap for row in ws.iter_rows(
            if isinstance(c.value, str) and c.value.startswith("#")]
 assert not hatalar, hatalar
 ```
+
+## Sayfa koruması
+
+Varsayılan olarak **açma**: kullanıcı keşfe satır ekleyecek, koruma bunu engeller. Kullanıcı isterse yalnız İcmal ve
+Kapak'ı şifresiz koru (`ws.protection.sheet = True`); girdi hücreleri zaten kilitsizdir.
+
+## Excel'siz ortamda teslim
+
+openpyxl'in yazdığı dosyada hesaplanmış değer yoktur; Excel açınca hesaplar ama Quick Look ve telefon önizlemesi
+boş görünebilir. Excel varsa `xk.excel_ile_kaydet()` ile kaydet. Yoksa asıl dosyayı LibreOffice ile kaydetme
+(biçimi bozabilir); denetimi bir kopyada yap ve kullanıcıya dosyanın Excel'de açılınca hesaplanacağını söyle.
