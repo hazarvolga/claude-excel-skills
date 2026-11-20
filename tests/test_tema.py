@@ -60,3 +60,57 @@ def test_yeni_tema_alanlari():
 
 def test_ozel_vurgu_yeni_temada():
     assert xk.tema("mimari", vurgu="C8102E").seriler[0] == "C8102E"
+
+
+# ---------------------------------------------------------------- yazı ölçeği ve rakam yazısı
+
+from openpyxl import Workbook  # noqa: E402
+from openpyxl.chart import BarChart, Reference  # noqa: E402
+
+
+def _kpi(ad: str):
+    ws = Workbook().active
+    xk.kpi_karti(ws, xk.tema(ad), "B2", 4, "Toplam ciro", "=1000", "sayi")
+    return ws
+
+
+def test_sunum_olcegi():
+    ws = _kpi("sunum")
+    assert ws["B3"].font.sz == 28.5
+    assert ws.row_dimensions[3].height == 46.8
+    ws = _kpi("kurumsal")
+    assert ws["B3"].font.sz == 22
+    assert ws.row_dimensions[3].height == 36
+
+
+def test_teknik_rakam_yazisi():
+    ws = _kpi("teknik")
+    assert ws["B3"].font.name == "Consolas"
+    assert ws["B2"].font.name == "Calibri"
+
+
+def _grafik_baslik_boyutu(ad: str) -> int:
+    ws = Workbook().active
+    for i in range(1, 4):
+        ws.append([f"k{i}", i])
+    ch = BarChart()
+    ch.add_data(Reference(ws, min_col=2, min_row=1, max_row=3))
+    xk.grafik_stili(ch, xk.tema(ad), "Başlık")
+    return ch.title.tx.rich.p[0].r[0].rPr.sz
+
+
+def test_grafik_metni_olcekli():
+    assert _grafik_baslik_boyutu("sunum") == 1430
+    assert _grafik_baslik_boyutu("kurumsal") == 1100
+
+
+def test_sunum_eksen_etiketi_olceklenmez():
+    # Ölçekli eksen yazısı dar grafikte ay etiketlerini iki satıra böler (görsel denetimde görüldü)
+    ws = Workbook().active
+    for i in range(1, 4):
+        ws.append([f"k{i}", i, i * 2])
+    ch = BarChart()
+    ch.add_data(Reference(ws, min_col=2, max_col=3, min_row=1, max_row=3))
+    xk.grafik_stili(ch, xk.tema("sunum"), "Başlık")
+    assert ch.x_axis.txPr.p[0].pPr.defRPr.sz == 900
+    assert ch.legend.txPr.p[0].pPr.defRPr.sz == 1170

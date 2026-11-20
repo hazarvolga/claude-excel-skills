@@ -146,8 +146,16 @@ def ince(renk: str) -> Side:
     return Side(style="thin", color=renk)
 
 
-def yazi(t: Tema, boyut=10, kalin=False, renk=None, baslik=False, italik=False) -> Font:
-    return Font(name=t.baslik_yazi if baslik else t.govde_yazi, sz=boyut, b=kalin, i=italik, color=renk or t.murekkep)
+def _olcek(t: Tema, deger: float) -> float:
+    """Satır yüksekliği gibi ölçüleri temanın yazı ölçeğiyle büyütür."""
+    return round(deger * t.yazi_olcegi, 1)
+
+
+def yazi(t: Tema, boyut=10, kalin=False, renk=None, baslik=False, italik=False, rakam=False) -> Font:
+    """rakam=True: temanın rakam_yazi'sı varsa onu kullanır (teknik: Consolas). Boyut yazi_olcegi ile çarpılır,
+    yarım puntoya yuvarlanır."""
+    ad = t.rakam_yazi if rakam and t.rakam_yazi else (t.baslik_yazi if baslik else t.govde_yazi)
+    return Font(name=ad, sz=round(boyut * t.yazi_olcegi * 2) / 2, b=kalin, i=italik, color=renk or t.murekkep)
 
 
 def dolgu(renk: str) -> PatternFill:
@@ -174,7 +182,7 @@ def sayfa_basligi(ws, t: Tema, metin: str, alt: str = "", hucre: str = "B2", gen
     c.value = metin
     c.font = yazi(t, 20, baslik=True)
     c.alignment = Alignment(vertical="center")
-    ws.row_dimensions[c.row].height = 32
+    ws.row_dimensions[c.row].height = _olcek(t, 32)
     if alt:
         a = ws.cell(c.row + 1, c.column, alt)
         a.font = yazi(t, 10, renk=t.ara)
@@ -209,7 +217,7 @@ def tablo_basligi(ws, t: Tema, satir: int, sutun1: int, basliklar: list[tuple[st
         c.fill = dolgu(t.murekkep)
         c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         ws.column_dimensions[get_column_letter(sutun1 + i)].width = gen
-    ws.row_dimensions[satir].height = 30
+    ws.row_dimensions[satir].height = _olcek(t, 30)
 
 
 def girdi_hucresi(ws, t: Tema, alan: str):
@@ -273,7 +281,7 @@ def kpi_karti(ws, t: Tema, sol_ust: str, sutun: int, etiket: str, formul: str, b
     e.font = yazi(t, 9, kalin=True, renk=t.ara)
     e.alignment = Alignment(indent=1, vertical="bottom")
     d = ws.cell(r1 + 1, c1, formul)
-    d.font = yazi(t, 22, kalin=True, baslik=True)
+    d.font = yazi(t, 22, kalin=True, baslik=True, rakam=True)
     d.number_format = BICIM.get(bicim, bicim)
     d.alignment = Alignment(horizontal="left", indent=1, vertical="center", shrink_to_fit=True)
     a = ws.cell(r1 + 2, c1, alt_formul if alt_formul else alt_metin)
@@ -281,21 +289,24 @@ def kpi_karti(ws, t: Tema, sol_ust: str, sutun: int, etiket: str, formul: str, b
     a.alignment = Alignment(horizontal="left", indent=1, vertical="top")
     if alt_formul:
         a.number_format = BICIM.get(alt_bicim, alt_bicim)
-    ws.row_dimensions[r1].height = 20
-    ws.row_dimensions[r1 + 1].height = 36
-    ws.row_dimensions[r1 + 2].height = 18
+    ws.row_dimensions[r1].height = _olcek(t, 20)
+    ws.row_dimensions[r1 + 1].height = _olcek(t, 36)
+    ws.row_dimensions[r1 + 2].height = _olcek(t, 18)
 
 
 # ---------------------------------------------------------------- grafikler
 
 
-def _metin(t: Tema, boyut: int, renk=None, kalin=False) -> RichText:
-    oz = CharacterProperties(sz=boyut, b=kalin, solidFill=renk or t.ara, latin=DFont(typeface=t.govde_yazi))
+def _metin(t: Tema, boyut: int, renk=None, kalin=False, olcekli=True) -> RichText:
+    """olcekli=False: eksen etiketi gibi dar alandaki yazı temanın yazı ölçeğiyle büyütülmez."""
+    oz = CharacterProperties(sz=round(boyut * (t.yazi_olcegi if olcekli else 1)), b=kalin, solidFill=renk or t.ara,
+                             latin=DFont(typeface=t.govde_yazi))
     return RichText(p=[Paragraph(pPr=ParagraphProperties(defRPr=oz), endParaRPr=oz)])
 
 
 def _baslik(t: Tema, metin: str) -> Title:
-    oz = CharacterProperties(sz=1100, b=True, solidFill=t.murekkep, latin=DFont(typeface=t.govde_yazi))
+    oz = CharacterProperties(sz=round(1100 * t.yazi_olcegi), b=True, solidFill=t.murekkep,
+                             latin=DFont(typeface=t.govde_yazi))
     p = Paragraph(pPr=ParagraphProperties(defRPr=oz), r=[RegularTextRun(rPr=oz, t=metin)])
     return Title(tx=Text(rich=RichText(p=[p])), overlay=False)
 
@@ -339,7 +350,7 @@ def grafik_stili(chart, t: Tema, baslik: str, deger: str = "sayi", etiket: bool 
         chart.plot_area.layout = Layout(manualLayout=ManualLayout(x=0.03, y=0.14, w=0.94, h=1 - 0.14 - alt_pay - 0.04))
         for eksen in (chart.x_axis, chart.y_axis):
             eksen.delete = False
-            eksen.txPr = _metin(t, 900)
+            eksen.txPr = _metin(t, 900, olcekli=False)
             eksen.spPr = GraphicalProperties(ln=LineProperties(solidFill=t.cizgi, w=6350))
             eksen.majorTickMark = "none"
             eksen.minorTickMark = "none"
@@ -518,7 +529,7 @@ def gezinme(wb, t: Tema, menu_sayfa: str, hucre: str = "A1", metin: str = "← M
         c = ws[hucre]
         c.value = metin
         c.hyperlink = f"#'{menu_sayfa}'!A1"
-        c.font = Font(name=t.govde_yazi, sz=9, u="single", color=t.vurgu)
+        c.font = Font(name=t.govde_yazi, sz=round(9 * t.yazi_olcegi * 2) / 2, u="single", color=t.vurgu)
 
 
 def dondur(ws, hucre: str):
