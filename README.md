@@ -144,7 +144,7 @@ skills/
   excel-design-system/
     SKILL.md
     references/  tema-tokenlari.md, xlkit-api.md
-    scripts/     xlkit.py, motor.py (Excel / LibreOffice), ortam.py
+    scripts/     xlkit.py, xlkit_motor.py (Excel / LibreOffice), ortam.py
   excel-charts/
     SKILL.md
     references/  openpyxl-grafik-tuzaklari.md
@@ -183,7 +183,7 @@ docs/            README görselleri
 
 ## Sürüm notları
 
-- **1.1.0:** Her AI aracında ve her sistemde çalışır. Sabit skill yolları kaldırıldı; `motor.py` ile Windows Excel
+- **1.1.0:** Her AI aracında ve her sistemde çalışır. Sabit skill yolları kaldırıldı; `xlkit_motor.py` ile Windows Excel
   ve LibreOffice desteği; `ortam.py` ortam raporu; `kur.sh` / `kur.ps1` kurulum betikleri; skill açıklamaları
   yalnız tetikleyici koşulu söyler; testler (`tests/`, `kur.test.sh`).
 

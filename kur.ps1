@@ -1,4 +1,4 @@
-<#
+﻿<#
 Excel skill setini (skills\ altındaki her skill) bilgisayardaki AI araçlarının skill klasörlerine kurar.
 Varsayılan: sembolik bağlantı; olmazsa dizin bağlantısı (junction); o da olmazsa işaretli kopya.
 Kullanım (PowerShell 5.1+ ya da pwsh):
@@ -22,6 +22,7 @@ $Targets = @('.claude/skills', '.agents/skills', '.codex/skills', '.gemini/skill
 $Skills = Get-ChildItem -Directory (Join-Path $Root 'skills') | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') }
 if (-not $Skills) { Write-Error "skills\ altında skill bulunamadı: $Root\skills"; exit 2 }
 
+function Test-Var($t) { (Test-Path -LiteralPath $t) -or [bool](Get-Item -LiteralPath $t -Force -ErrorAction SilentlyContinue) }  # kırık bağlantı da "var"
 function Get-Hedef($t) { $i = Get-Item -LiteralPath $t -Force -ErrorAction SilentlyContinue; if ($i -and $i.LinkType) { [string]$i.Target } else { $null } }
 function Test-Bizim($t, $src) {
   $hedef = Get-Hedef $t
@@ -37,7 +38,7 @@ function Get-Durum($t, $src) {
   if ($hedef) { if (Test-Bizim $t $src) { return 'bağlı' } else { return "YABANCI BAĞLANTI -> $hedef" } }
   if (Test-Bizim $t $src) { return 'kopya' }
   if (Test-EskiKopya $t) { return 'ESKİ ELLE KOPYA (-EskiyiDegistir ile yedekleyip bağla)' }
-  if (Test-Path -LiteralPath $t) { return 'YABANCI KLASÖR (dokunulmadı)' }
+  if (Test-Var $t) { return 'YABANCI KLASÖR (dokunulmadı)' }
   return 'yok'
 }
 function Remove-Hedef($t) {
@@ -58,7 +59,7 @@ foreach ($dir in $Targets) {
     $t = Join-Path $dir $s.Name; $src = $s.FullName; $not = ''
     if ($Kaldir) { if (Test-Bizim $t $src) { Remove-Hedef $t } }
     elseif (-not $Kontrol) {
-      if (Test-Path -LiteralPath $t) {
+      if (Test-Var $t) {
         if (Test-Bizim $t $src) { Remove-Hedef $t }
         elseif ($EskiyiDegistir -and (Test-EskiKopya $t)) {
           $hedefKlasor = Join-Path $Yedek (($dir.Substring($Base.Length).TrimStart('\', '/')) -replace '[\\/]', '_')

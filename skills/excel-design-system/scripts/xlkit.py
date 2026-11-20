@@ -37,7 +37,7 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 _BURA = os.path.dirname(os.path.abspath(__file__))
 if _BURA not in sys.path:
     sys.path.insert(0, _BURA)
-import motor as _motor  # noqa: E402  (aynı klasördeki motor.py)
+import xlkit_motor as _motor  # noqa: E402  (aynı klasördeki xlkit_motor.py)
 
 # ---------------------------------------------------------------- tema
 
@@ -512,7 +512,7 @@ def dondur(ws, hucre: str):
     ws.freeze_panes = hucre
 
 
-# ---------------------------------------------------------------- hesapla, önizle (motor.py)
+# ---------------------------------------------------------------- hesapla, önizle (xlkit_motor.py)
 
 
 def excel_ile_kaydet(xlsx: str, temizle: bool = True, motor: str | None = None) -> str | None:

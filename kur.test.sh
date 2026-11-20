@@ -53,5 +53,16 @@ mkdir -p "$FAKE/depo yolu"; cp -R "$HERE/kur.sh" "$HERE/skills" "$FAKE/depo yolu
 ( cd / && HOME="$FAKE" bash "$FAKE/depo yolu/kur.sh" >/dev/null 2>&1; HOME="$FAKE" bash "$FAKE/depo yolu/kur.sh" >/dev/null 2>&1 )
 check "bağla: boşluklu depo yolundan ve başka cwd'den, iki kez" "$(ok test "$(readlink "$FAKE/.qoder/skills/excel-charts")" = "$FAKE/depo yolu/skills/excel-charts")"
 
+# kırık bağlantı (depo taşındı): yabancı sayılır, kurulum yarıda kalmaz, diğer skill'ler kurulur
+HOME="$FAKE" bash "$FAKE/depo yolu/kur.sh" --kaldir >/dev/null 2>&1; k --kaldir; ln -s "$FAKE/silinmis-depo/excel-charts" "$FAKE/.qoder/skills/excel-charts"
+k; check "kur.sh kırık bağlantı: dokunmaz, diğerlerini kurar" "$(ok test -L "$FAKE/.qoder/skills/excel-dashboard" -a "$(readlink "$FAKE/.qoder/skills/excel-charts")" = "$FAKE/silinmis-depo/excel-charts")"
+k --kaldir
+if command -v pwsh >/dev/null 2>&1; then
+  HOME="$FAKE" pwsh -NoProfile -File "$HERE/kur.ps1" >/dev/null 2>&1
+  check "kur.ps1 kırık bağlantı: yarıda kalmaz, diğerlerini kurar" "$(ok test -L "$FAKE/.qoder/skills/excel-dashboard" -a "$(readlink "$FAKE/.qoder/skills/excel-charts")" = "$FAKE/silinmis-depo/excel-charts")"
+  HOME="$FAKE" pwsh -NoProfile -File "$HERE/kur.ps1" -Kaldir >/dev/null 2>&1
+fi
+rm -f "$FAKE/.qoder/skills/excel-charts"
+
 echo; echo "Sonuç: $PASS geçti, $FAIL kaldı"
 [ "$FAIL" -eq 0 ]

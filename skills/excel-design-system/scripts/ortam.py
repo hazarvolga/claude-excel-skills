@@ -16,7 +16,7 @@ import sys
 _BURA = os.path.dirname(os.path.abspath(__file__))
 if _BURA not in sys.path:
     sys.path.insert(0, _BURA)
-import motor  # noqa: E402  (aynı klasördeki motor.py; openpyxl gerektirmez)
+import xlkit_motor as motor  # noqa: E402  (aynı klasördeki xlkit_motor.py; openpyxl gerektirmez)
 
 PAKETLER = ("openpyxl", "pymupdf", "PIL", "win32com")
 ZORUNLU = ("openpyxl",)

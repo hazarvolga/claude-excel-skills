@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from openpyxl import Workbook, load_workbook
 
-import motor
+import xlkit_motor as motor
 import xlkit as xk
 
 
@@ -142,3 +142,63 @@ def test_libreoffice_gercek_hesaplama_turkce_yol(tmp_path):
 def test_excel_mac_onizle_turkce_yol(tmp_path):
     x = _kitap(tmp_path / TURKCE)
     assert len(xk.onizle(str(x), str(tmp_path / "on"), motor="excel-mac")) >= 1
+
+
+# ---------------------------------------------------------------- son inceleme düzeltmeleri
+
+
+def test_modul_adi_pypi_motor_ile_cakismaz():
+    assert xk._motor.__name__ == "xlkit_motor"
+
+
+class _ComHatasi(Exception):
+    """pywintypes.com_error gibi: OSError'dan türemez."""
+
+
+def test_excel_win_com_hatasi_motor_hatasina_doner(tmp_path):
+    com = _SahteCom()
+
+    class _Kitap:
+        def Save(self):
+            raise _ComHatasi("salt okunur")
+
+        def Close(self, kaydet):
+            com.cagrilar.append(("Close", kaydet))
+
+    com.Workbooks.Open = lambda yol: _Kitap()
+    with pytest.raises(motor.MotorHatasi, match="salt okunur"):
+        motor._excel_win(str(tmp_path / "k.xlsx"), dispatch=lambda ad: com)
+    assert com.cagrilar[-1] == ("Quit",)
+
+
+def _osascript_hatasi(mesaj):
+    def run(args, **kw):
+        assert kw.get("timeout"), "osascript zaman aşımsız çağrılmamalı"
+        raise subprocess.CalledProcessError(1, args, output="", stderr=mesaj)
+    return run
+
+
+def test_mac_pdf_yalniz_eksi_50_hatasinda_yeniden_dener(monkeypatch, tmp_path):
+    sayac = {"n": 0}
+    hata = _osascript_hatasi("execution error: The variable wbk is not defined. (-2753)")
+
+    def say(args, **kw):
+        sayac["n"] += 1
+        return hata(args, **kw)
+
+    monkeypatch.setattr(motor.subprocess, "run", say)
+    with pytest.raises(subprocess.CalledProcessError):
+        motor._mac_pdf(str(tmp_path / "k.xlsx"), str(tmp_path / "k.pdf"))
+    assert sayac["n"] == 1
+
+    sayac["n"] = 0
+    hata = _osascript_hatasi("Microsoft Excel got an error: Parameter error. (-50)")
+    with pytest.raises(subprocess.CalledProcessError):
+        motor._mac_pdf(str(tmp_path / "k.xlsx"), str(tmp_path / "k.pdf"))
+    assert sayac["n"] == 2
+
+
+def test_ayni_adli_kaydedilmemis_kitap_kapatilmaz():
+    betik = motor._excel_betigi("/tmp/rapor.xlsx", "save wbk")
+    assert "saved of" in betik
+    assert 'close workbook "rapor.xlsx" saving no\n  end try' not in betik

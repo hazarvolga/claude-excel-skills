@@ -67,16 +67,23 @@ def bulunan_motorlar() -> list[str]:
 
 
 def _applescript(betik: str, zaman: int = EXCEL_ZAMAN_ASIMI):
-    subprocess.run(["osascript", "-e", f"with timeout of {zaman} seconds\n{betik}\nend timeout"], check=True)
+    """İzin penceresi ya da kurtarma penceresi Excel'i kilitlerse süreç zaman aşımıyla düşer, sıradaki motora geçilir."""
+    subprocess.run(["osascript", "-e", f"with timeout of {zaman} seconds\n{betik}\nend timeout"],
+                   check=True, capture_output=True, text=True, timeout=zaman + 30)
 
 
 def _excel_betigi(yol: str, ara_adim: str) -> str:
-    """Aynı adlı açık kitabı önce kapatır (yoksa Excel eski açık kopyayı kullanır), hata olsa da kapatır."""
+    """Aynı adlı açık kitap kaydedilmişse kapatır (yoksa Excel eski açık kopyayı kullanır); kaydedilmemişse
+    kullanıcının işini kaybetmemek için kapatmaz, hata verir. Kendi açtığı kitabı hata olsa da kapatır."""
     ad = os.path.basename(yol)
     return f'''tell application "Microsoft Excel"
-  try
-    close workbook "{ad}" saving no
-  end try
+  if (exists workbook "{ad}") then
+    if saved of workbook "{ad}" then
+      close workbook "{ad}" saving no
+    else
+      error "Excel'de aynı adlı kaydedilmemiş bir kitap açık ({ad}): kaydedip kapatın"
+    end if
+  end if
   set wbk to open workbook workbook file name (POSIX file "{yol}" as text)
   try
     calculate full
@@ -97,7 +104,9 @@ def _mac_pdf(xlsx: str, pdf: str):
     adim = f'save as active sheet of wbk filename (POSIX file "{pdf}" as text) file format PDF file format'
     try:
         _applescript(_excel_betigi(os.path.abspath(xlsx), adim))
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as hata:
+        if "(-50)" not in (hata.stderr or ""):
+            raise
         _applescript(_excel_betigi(os.path.abspath(xlsx), adim))  # Excel PDF kaydında aralıklı -50 verir
 
 
@@ -121,6 +130,10 @@ def _excel_win(xlsx: str, pdf: str | None = None, dispatch=None):
             kitap.ExportAsFixedFormat(0, os.path.abspath(pdf))
         else:
             kitap.Save()
+    except (OSError, MotorHatasi):
+        raise
+    except Exception as hata:  # pywintypes.com_error OSError'dan türemez; sıradaki motora geçilebilsin
+        raise MotorHatasi(f"Excel (COM): {hata}") from hata
     finally:
         if kitap is not None:
             kitap.Close(False)
