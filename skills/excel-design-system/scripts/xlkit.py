@@ -59,6 +59,9 @@ class Tema:
     baslik_yazi: str = "Georgia"
     govde_yazi: str = "Calibri"
     girdi: str = "FFF8E1"  # kullanıcının dolduracağı hücre zemini
+    yazi_olcegi: float = 1.0       # tüm yazı ve satır yüksekliklerinin çarpanı (sunum: 1.3)
+    rakam_yazi: str | None = None  # KPI ve antet değerleri için ayrı yazı (teknik: Consolas)
+    renksiz: bool = False          # siyah-beyaz baskı: grafikte desen ve kesik, durumda mürekkep
 
 
 TEMALAR = {
@@ -68,6 +71,16 @@ TEMALAR = {
                     seriler=("0F9D58", "202124", "9AA0A6", "DADCE0", "7BC8A4"), baslik_yazi="Calibri"),
     "gece": Tema("gece", "E8EAED", "1E2227", "262B31", "3C434C", "30363D", "9AA4AF", "F2A33A",
                  seriler=("F2A33A", "E8EAED", "7D8790", "4F5862", "E07B53"), baslik_yazi="Calibri"),
+    "mimari": Tema("mimari", "262626", "F5F5F2", "ECECE7", "D3D1CB", "E4E2DD", "6E6B66", "3D5A6C",
+                   seriler=("3D5A6C", "262626", "9A9790", "D3D1CB", "8AA6B5"), baslik_yazi="Cambria"),
+    "teknik": Tema("teknik", "1A1A1A", "FFFFFF", "F2F4F5", "9AA3AB", "D9DEE2", "5F6B75", "0B6E99",
+                   seriler=("0B6E99", "1A1A1A", "8C969E", "C5CCD2", "4FA3C7"), baslik_yazi="Calibri",
+                   rakam_yazi="Consolas"),
+    "baski": Tema("baski", "000000", "FFFFFF", "F2F2F2", "808080", "D0D0D0", "595959", "000000",
+                  seriler=("000000", "7F7F7F", "BFBFBF", "404040", "D9D9D9"), baslik_yazi="Calibri", renksiz=True),
+    "sunum": Tema("sunum", "111827", "FFFFFF", "F3F4F6", "D1D5DB", "E5E7EB", "6B7280", "7C3AED",
+                  seriler=("7C3AED", "111827", "9CA3AF", "D1D5DB", "A78BFA"), baslik_yazi="Calibri Light",
+                  yazi_olcegi=1.3),
 }
 
 
